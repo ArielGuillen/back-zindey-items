@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Description: 
+  Test YAML template for the creation of the services that we will use in the project
+
+Parameters:
+  MyBucketName: 
+    Type: String
+    Default: bucket-test-040422
+  MyTableName: 
+    Type: String
+    Default: MyTableItem
+  MyUserPoolName: 
+    Type: String
+    Default: UserTest
+  MyCognitoUserPoolArn:
+    Type: String
+    Default: arn:aws:cognito-idp:us-east-1:213198851588:userpool/us-east-1_fvuuXTrCB
+    
+Resources:
+
+  GetItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: app.lambdaHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        GetItemEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /item
+            Method: get
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MyTableName
+
+  MyRestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: MyRestAPI
+      StageName: Test
+      GatewayResponses:
+        UNAUTHORIZED:
+          ResponseTemplates:
+            "application/json": '{ "message": "Invalid authorization token"}'
+        BAD_REQUEST_BODY:
+          ResponseTemplates:
+            "application/json": '{ "message": "$context.error.validationErrorString"}'
+      Auth:
+         Authorizers:
+           CognitoAuthorizer:
+              UserPoolArn: !Ref MyCognitoUserPoolArn
+      Models:
+        TestModel:
+          $schema: 'http://json-schema.org/draft-04/schema#'
+          title: TestModel
+          type: object
+          properties:
+            name:
+              type: string
+              minLength: 10
+            email:
+              type: string
+              minLength: 10
+              maxLength: 50
+              pattern: "^[^@]+@[^@]+\\.[a-zA-Z]{2,}$"
+              message: "Correo electrónico incorrecto"
+            base64File:
+              type: string
+              minLength: 10
+          required:
+            - email
+            - name
+            - base64File
+
+  MyTableItem:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: !Ref MyTableName
+        AttributeDefinitions:
+          -
+            AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          -
+            AttributeName: "id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: "5"
+          WriteCapacityUnits: "5"
+            
+Outputs: 
+  MyFunction:
+    Description: "Create the Lambda function"
+    Value: !GetAtt GetItemFunction.Arn
+  MyTableItem:
+    Description: "Items Table"
+    Value: !GetAtt MyTableItem.Arn
