@@ -41,6 +41,31 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref MyTableName
 
+  PostItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/
+      Handler: create_item.lambdaHandler     
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        PostItemEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /item
+            Method: post
+            Auth:
+               Authorizer: CognitoAuthorizer
+            RequestModel:
+              Model: TestModel
+              Required: true
+              ValidateBody: true
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref MyTableName
+
   MyRestApi:
     Type: AWS::Serverless::Api
     Properties:
