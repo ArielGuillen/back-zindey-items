@@ -5,12 +5,12 @@ Description:
   Test YAML template for the creation of the services that we will use in the project
 
 Parameters:
-  MyBucketName:
-    Type: String
-    Default: bucket-test-040422
   MyTableName: 
     Type: String
     Default: MyTableItem
+  BusinessTableName: 
+    Type: String
+    Default: BusinessTable
   MyUserPoolName: 
     Type: String
     Default: UserTest
@@ -23,7 +23,7 @@ Resources:
   GetItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
+      CodeUri: src/item
       Handler: get_items.lambdaHandler
       Runtime: nodejs14.x
       Architectures:
@@ -44,7 +44,7 @@ Resources:
   PostItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/
+      CodeUri: src/item
       Handler: create_item.lambdaHandler     
       Runtime: nodejs14.x
       Architectures:
@@ -65,6 +65,28 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref MyTableName
+
+  PostBusinessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/business/
+      Handler: create_business.lambdaHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        PostBusinessEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /business
+            Method: post
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessTableName
+
 
   MyRestApi:
     Type: AWS::Serverless::Api
@@ -105,21 +127,37 @@ Resources:
             - category
             - price
 
+  BusinessTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref BusinessTableName
+      AttributeDefinitions:
+        -
+          AttributeName: "id"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "id"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+
   MyTableItem:
-      Type: AWS::DynamoDB::Table
-      Properties:
-        TableName: !Ref MyTableName
-        AttributeDefinitions:
-          -
-            AttributeName: "id"
-            AttributeType: "S"
-        KeySchema:
-          -
-            AttributeName: "id"
-            KeyType: "HASH"
-        ProvisionedThroughput:
-          ReadCapacityUnits: "5"
-          WriteCapacityUnits: "5"
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref MyTableName
+      AttributeDefinitions:
+        -
+          AttributeName: "id"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "id"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
             
 Outputs: 
   MyFunction:
