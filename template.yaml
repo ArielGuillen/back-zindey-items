@@ -5,7 +5,7 @@ Description:
   Test YAML template for the creation of the services that we will use in the project
 
 Parameters:
-  MyBucketName: 
+  MyBucketName:
     Type: String
     Default: bucket-test-040422
   MyTableName: 
@@ -24,7 +24,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/
-      Handler: app.lambdaHandler
+      Handler: get_items.lambdaHandler
       Runtime: nodejs14.x
       Architectures:
         - x86_64
@@ -91,19 +91,19 @@ Resources:
             name:
               type: string
               minLength: 10
-            email:
-              type: string
-              minLength: 10
-              maxLength: 50
-              pattern: "^[^@]+@[^@]+\\.[a-zA-Z]{2,}$"
-              message: "Correo electrónico incorrecto"
-            base64File:
-              type: string
-              minLength: 10
+            price:
+              type: number
+            category:
+              type: object
+              properties:
+                name:
+                  type: string
+                  minLength: 4
+                  maxLength: 32
           required:
-            - email
             - name
-            - base64File
+            - category
+            - price
 
   MyTableItem:
       Type: AWS::DynamoDB::Table
