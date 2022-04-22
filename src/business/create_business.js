@@ -15,6 +15,7 @@ exports.lambdaHandler = async( event ) => {
 
     let {
         id,
+        businessLineId,
         name,
         base64Image
     } = JSON.parse ( event.body );
@@ -30,15 +31,15 @@ exports.lambdaHandler = async( event ) => {
             Body: decodedFile,
             ContentType: "image/jpeg",
         }
-
         await s3.putObject( s3Params ).promise();
 
-        let logo = `https://${BUCKET_NAME}.s3.amazonaws.com/images/item-${id}.jpeg`
+        const logo = `https://${BUCKET_NAME}.s3.amazonaws.com/images/item-${id}.jpeg`
         
         let dynamoParams = {
             TableName : TABLE_NAME,
             Item: {
                 id,
+                businessLineId,
                 name,
                 logo
             } 

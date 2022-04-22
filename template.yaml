@@ -69,6 +69,27 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref MyTableName
 
+  GetBusinessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/business
+      Handler: get_business.lambdaHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        GetBusinessEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /business
+            Method: get
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessTableName
+
   PostBusinessFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -92,6 +113,27 @@ Resources:
         - S3FullAccessPolicy:
             BucketName: !Ref ImagesBucketName
 
+  GetBusinessLineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/businessLine
+      Handler: get_businessLine.lambdaHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        GetBusinessLineEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /businessLine/{lastKey}
+            Method: get
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessLineTableName
+
   PostBusinessLineFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -101,7 +143,7 @@ Resources:
       Architectures:
         - x86_64
       Events:
-        PostBusinessEvent:
+        PostBusinessLineEvent:
           Type: Api
           Properties:
             RestApiId: !Ref MyRestApi
@@ -111,7 +153,7 @@ Resources:
                Authorizer: CognitoAuthorizer
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref BusinessTableName
+            TableName: !Ref BusinessLineTableName
 
   MyRestApi:
     Type: AWS::Serverless::Api
@@ -160,10 +202,16 @@ Resources:
         -
           AttributeName: "id"
           AttributeType: "S"
+        -
+          AttributeName: "businessLineId"
+          AttributeType: "S"
       KeySchema:
         -
           AttributeName: "id"
           KeyType: "HASH"
+        -
+          AttributeName: "businessLineId"
+          KeyType: "RANGE"
       ProvisionedThroughput:
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
