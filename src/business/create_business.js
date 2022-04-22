@@ -1,5 +1,6 @@
 const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB.DocumentClient();
+const s3 = new AWS.S3();
 
 exports.lambdaHandler = async( event ) => {
 
@@ -32,16 +33,17 @@ exports.lambdaHandler = async( event ) => {
 
         await s3.putObject( s3Params ).promise();
 
-        let imageUrl = `https://${BUCKET_NAME}.s3.amazonaws.com/images/item-${id}.jpeg`
-
-        await dynamo.put( {
+        let logo = `https://${BUCKET_NAME}.s3.amazonaws.com/images/item-${id}.jpeg`
+        
+        let dynamoParams = {
             TableName : TABLE_NAME,
             Item: {
                 id,
                 name,
-                imageUrl
+                logo
             } 
-        }).promise();
+        }
+        await dynamo.put( dynamoParams ).promise();
 
         response.body= JSON.stringify( { message: "Successfully upload the business data"});
 

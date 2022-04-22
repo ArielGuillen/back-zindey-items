@@ -90,7 +90,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref BusinessTableName
         - S3FullAccessPolicy:
-            BucketName: !Ref MyBucketName
+            BucketName: !Ref ImagesBucketName
 
   PostBusinessLineFunction:
     Type: AWS::Serverless::Function
@@ -175,9 +175,6 @@ Resources:
       AttributeDefinitions:
         - 
           AttributeName: "id"
-          AttributeType: "S"
-        - 
-          AttributeName: "name"
           AttributeType: "S"
       KeySchema:
         -
