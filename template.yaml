@@ -11,9 +11,12 @@ Parameters:
   BusinessTableName: 
     Type: String
     Default: BusinessTable
-  MyUserPoolName: 
+  BusinessLineTableName: 
     Type: String
-    Default: UserTest
+    Default: BusinessLineTable
+  ImagesBucketName: 
+    Type: String
+    Default: zindey-bucket-042222
   MyCognitoUserPoolArn:
     Type: String
     Default: arn:aws:cognito-idp:us-east-1:213198851588:userpool/us-east-1_fvuuXTrCB
@@ -59,7 +62,7 @@ Resources:
             Auth:
                Authorizer: CognitoAuthorizer
             RequestModel:
-              Model: TestModel
+              Model: ItemModel
               Required: true
               ValidateBody: true
       Policies:
@@ -86,7 +89,29 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref BusinessTableName
+        - S3FullAccessPolicy:
+            BucketName: !Ref MyBucketName
 
+  PostBusinessLineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/businessLine/
+      Handler: create_businessLine.lambdaHandler
+      Runtime: nodejs14.x
+      Architectures:
+        - x86_64
+      Events:
+        PostBusinessEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /businessLine
+            Method: post
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessTableName
 
   MyRestApi:
     Type: AWS::Serverless::Api
@@ -105,9 +130,9 @@ Resources:
            CognitoAuthorizer:
               UserPoolArn: !Ref MyCognitoUserPoolArn
       Models:
-        TestModel:
+        ItemModel:
           $schema: 'http://json-schema.org/draft-04/schema#'
-          title: TestModel
+          title: ItemModel
           type: object
           properties:
             name:
@@ -143,6 +168,25 @@ Resources:
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
 
+  BusinessLineTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref BusinessLineTableName
+      AttributeDefinitions:
+        - 
+          AttributeName: "id"
+          AttributeType: "S"
+        - 
+          AttributeName: "name"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "id"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+
   MyTableItem:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -158,7 +202,35 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
-            
+
+  ImagesS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref ImagesBucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+  
+  ImagesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ImagesS3Bucket
+      PolicyDocument:
+        Id: BucketPolicy
+        Version: 2012-10-17
+        Statement:
+          - Action: 
+              - 's3:GetObject'
+              - 's3:PutObject'
+              - 's3:DeleteObject'
+            Sid: "BucketPolicy"
+            Effect: Allow
+            Principal: '*'
+            Resource: !Sub arn:aws:s3:::${ImagesS3Bucket}
+            Resource: !Sub arn:aws:s3:::${ImagesS3Bucket}/*
+
 Outputs: 
   MyFunction:
     Description: "Create the Lambda function"

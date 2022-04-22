@@ -2,7 +2,7 @@ const AWS = require("aws-sdk");
 //const s3 = new AWS.S3();
 const dynamo = new AWS.DynamoDB.DocumentClient();
 
-exports.lambdaHandler = async (event, context) => {
+exports.lambdaHandler = async ( event ) => {
 
     //const BUCKET_NAME = 'bucket-test-040422';
     const TABLE_NAME = 'MyTableItem';
