@@ -1,5 +1,5 @@
 const AWS = require('aws-sdk');
-const dynamo = AWS.DynamoDB.DocumentClient();
+const dynamo = new AWS.DynamoDB.DocumentClient();
 
 exports.lambdaHandler = async( event, context) => {
 
@@ -18,6 +18,7 @@ exports.lambdaHandler = async( event, context) => {
         let params = {
             TableName : "BusinessTable",
             Item: {
+                id,
                 name
             }
         };
