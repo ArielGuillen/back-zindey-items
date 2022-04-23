@@ -1,7 +1,6 @@
 const AWS = require("aws-sdk");
 //const s3 = new AWS.S3();
 const dynamo = new AWS.DynamoDB.DocumentClient();
-const uuid = require('uuid');
 
 exports.lambdaHandler = async ( event ) => {
 
@@ -13,6 +12,9 @@ exports.lambdaHandler = async ( event ) => {
         statusCode: 200,
         body: JSON.stringify({ message: "Successfully uploaded item" }),
     };
+    
+    //Get the id from the url params
+    const id = event.pathParameters.id;
 
     //Transform the JSON string of body value to a javascript object
     let { 
@@ -24,8 +26,6 @@ exports.lambdaHandler = async ( event ) => {
 
     //Get the image and decode from base64
     //const decodedFile = Buffer.from( base64File.replace( /^data:image\/\w+;base64,/, "" ), "base64" );
-
-    const id = uuid.v4();
 
     try {
         await dynamo.put({
