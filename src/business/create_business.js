@@ -41,7 +41,7 @@ exports.lambdaHandler = async( event ) => {
                 id,
                 name,
                 logo
-            } 
+            }
         }
         await dynamo.put( dynamoParams ).promise();
 
