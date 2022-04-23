@@ -1,0 +1,8 @@
+{  
+  "name": "zindey_delivery",
+  "version": "1.0.0",
+  "description": "SAM Template for backend of zindey_delivery project",
+  "dependencies": {
+    "uuid": "^8.3.2"
+  }
+}

@@ -20,45 +20,47 @@ Parameters:
   MyCognitoUserPoolArn:
     Type: String
     Default: arn:aws:cognito-idp:us-east-1:213198851588:userpool/us-east-1_fvuuXTrCB
-    
+
+Globals:
+  Function:
+      CodeUri: .
+      Runtime: nodejs14.x
+      MemorySize: 256
+      Timeout: 30
+      Architectures:
+        - x86_64
+
 Resources:
 
+#--------Item Functions --------
   GetItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/item
-      Handler: get_items.lambdaHandler
-      Runtime: nodejs14.x
-      Architectures:
-        - x86_64
+      Handler: src/item/get_items.lambdaHandler
       Events:
         GetItemEvent:
           Type: Api
           Properties:
             RestApiId: !Ref MyRestApi
             Path: /item
-            Method: get
+            Method: GET
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
-        - DynamoDBCrudPolicy:
+        - DynamoDBReadPolicy:
             TableName: !Ref MyTableName
 
   PostItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/item
-      Handler: create_item.lambdaHandler     
-      Runtime: nodejs14.x
-      Architectures:
-        - x86_64
+      Handler: src/item/create_item.lambdaHandler
       Events:
         PostItemEvent:
           Type: Api
           Properties:
             RestApiId: !Ref MyRestApi
             Path: /item
-            Method: post
+            Method: POST
             Auth:
                Authorizer: CognitoAuthorizer
             RequestModel:
@@ -66,53 +68,139 @@ Resources:
               Required: true
               ValidateBody: true
       Policies:
-        - DynamoDBCrudPolicy:
+        - DynamoDBWritePolicy:
             TableName: !Ref MyTableName
+
+  PutItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/item/update_item.lambdaHandler
+      Events:
+        PutItemEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /item/{id}
+            Method: PUT
+            Auth:
+               Authorizer: CognitoAuthorizer
+            RequestModel:
+              Model: ItemModel
+              Required: true
+              ValidateBody: true
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref MyTableName
+
+#--------Business Functions --------
+  GetBusinessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/business/get_business.lambdaHandler
+      Events:
+        GetBusinessEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /business
+            Method: GET
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref BusinessTableName
 
   PostBusinessFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/business/
-      Handler: create_business.lambdaHandler
-      Runtime: nodejs14.x
-      Architectures:
-        - x86_64
+      Handler: src/business/create_business.lambdaHandler
       Events:
         PostBusinessEvent:
           Type: Api
           Properties:
             RestApiId: !Ref MyRestApi
             Path: /business
-            Method: post
+            Method: POST
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
-        - DynamoDBCrudPolicy:
+        - DynamoDBWritePolicy:
+            TableName: !Ref BusinessTableName
+        - S3FullAccessPolicy:
+            BucketName: !Ref ImagesBucketName
+  
+  PutBusinessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/business/update_business.lambdaHandler
+      Events:
+        PutBusinessEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /business/{id}
+            Method: PUT
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBWritePolicy:
             TableName: !Ref BusinessTableName
         - S3FullAccessPolicy:
             BucketName: !Ref ImagesBucketName
 
+#--------BusinessLine Functions --------
+  GetBusinessLineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/businessLine/get_businessLine.lambdaHandler
+      Events:
+        GetBusinessLineEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /businessLine/{lastKey}
+            Method: GET
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref BusinessLineTableName
+
   PostBusinessLineFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/businessLine/
-      Handler: create_businessLine.lambdaHandler
-      Runtime: nodejs14.x
-      Architectures:
-        - x86_64
+      Handler: src/businessLine/create_businessLine.lambdaHandler
       Events:
-        PostBusinessEvent:
+        PostBusinessLineEvent:
           Type: Api
           Properties:
             RestApiId: !Ref MyRestApi
             Path: /businessLine
-            Method: post
+            Method: POST
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref BusinessTableName
+        - DynamoDBWritePolicy:
+            TableName: !Ref BusinessLineTableName
 
+  PutBusinessLineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/businessLine/update_businessLine.lambdaHandler
+      Events:
+        PutBusinessLineEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /businessLine/{id}
+            Method: PUT
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBWritePolicy:
+            TableName: !Ref BusinessLineTableName
+
+#--------API REST --------
   MyRestApi:
     Type: AWS::Serverless::Api
     Properties:
@@ -152,6 +240,7 @@ Resources:
             - category
             - price
 
+#--------DynamoDB Tables --------
   BusinessTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -160,10 +249,16 @@ Resources:
         -
           AttributeName: "id"
           AttributeType: "S"
+        -
+          AttributeName: "businessLineId"
+          AttributeType: "S"
       KeySchema:
         -
           AttributeName: "id"
           KeyType: "HASH"
+        -
+          AttributeName: "businessLineId"
+          KeyType: "RANGE"
       ProvisionedThroughput:
         ReadCapacityUnits: "5"
         WriteCapacityUnits: "5"
@@ -230,8 +325,5 @@ Resources:
 
 Outputs: 
   MyFunction:
-    Description: "Create the Lambda function"
+    Description: "Create the GetItem Lambda function"
     Value: !GetAtt GetItemFunction.Arn
-  MyTableItem:
-    Description: "Items Table"
-    Value: !GetAtt MyTableItem.Arn

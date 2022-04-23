@@ -2,8 +2,6 @@ const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB.DocumentClient();
 const s3 = new AWS.S3();
 
-const uuid = require('uuid')
-
 exports.lambdaHandler = async( event ) => {
 
     const BUCKET_NAME = 'zindey-bucket-042222';
@@ -14,14 +12,15 @@ exports.lambdaHandler = async( event ) => {
         statusCode: 200,
         body: JSON.stringify({ message: "Successfully uploaded business" }),
     };
+    
+    //Get the id from the url params
+    const id = event.pathParameters.id;
 
     let {
         name,
         logo,        
         businessLineId,
     } = JSON.parse ( event.body );
-
-    const id = uuid.v4();
 
     try{
 

@@ -1,6 +1,5 @@
 const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB.DocumentClient();
-const uuid = require('uuid');
 
 exports.lambdaHandler = async( event ) => {
 
@@ -9,12 +8,13 @@ exports.lambdaHandler = async( event ) => {
         statusCode: 200,
         body: JSON.stringify({ message: "Successfully uploaded businessLine data" }),
     };
+    
+    //Get the BusinessLine id from the url params
+    const id = event.pathParameters.id;
 
     let {
         name
     } = JSON.parse ( event.body );
-
-    const id = uuid.v4();
     
     try{
         let params = {
