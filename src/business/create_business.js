@@ -17,8 +17,9 @@ exports.lambdaHandler = async( event ) => {
 
     let {
         name,
-        logo,        
+        logo,
         businessLineId,
+        userId,
     } = JSON.parse ( event.body );
 
     const id = uuid.v4();
@@ -44,7 +45,8 @@ exports.lambdaHandler = async( event ) => {
                 id,
                 businessLineId,
                 name,
-                logo: logoUrl
+                logo: logoUrl,
+                userId,
             } 
         }
         await dynamo.put( dynamoParams ).promise();

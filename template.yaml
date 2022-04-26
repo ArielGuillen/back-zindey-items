@@ -8,7 +8,7 @@ Parameters:
   MyTableName: 
     Type: String
     Default: MyTableItem
-  BusinessTableName: 
+  BusinessesTableName: 
     Type: String
     Default: BusinessTable
   BusinessLineTableName: 
@@ -47,7 +47,7 @@ Resources:
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
-        - DynamoDBReadPolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref MyTableName
 
   PostItemFunction:
@@ -68,7 +68,7 @@ Resources:
               Required: true
               ValidateBody: true
       Policies:
-        - DynamoDBWritePolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref MyTableName
 
   PutItemFunction:
@@ -89,7 +89,7 @@ Resources:
               Required: true
               ValidateBody: true
       Policies:
-        - DynamoDBWritePolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref MyTableName
 
 #--------Business Functions --------
@@ -107,8 +107,8 @@ Resources:
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
-        - DynamoDBReadPolicy:
-            TableName: !Ref BusinessTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessesTableName
 
   PostBusinessFunction:
     Type: AWS::Serverless::Function
@@ -124,8 +124,8 @@ Resources:
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
-        - DynamoDBWritePolicy:
-            TableName: !Ref BusinessTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessesTableName
         - S3FullAccessPolicy:
             BucketName: !Ref ImagesBucketName
   
@@ -143,8 +143,8 @@ Resources:
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
-        - DynamoDBWritePolicy:
-            TableName: !Ref BusinessTableName
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessesTableName
         - S3FullAccessPolicy:
             BucketName: !Ref ImagesBucketName
 
@@ -158,12 +158,12 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref MyRestApi
-            Path: /businessLine/{lastKey}
+            Path: /businessLine
             Method: GET
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
-        - DynamoDBReadPolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref BusinessLineTableName
 
   PostBusinessLineFunction:
@@ -180,7 +180,7 @@ Resources:
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
-        - DynamoDBWritePolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref BusinessLineTableName
 
   PutBusinessLineFunction:
@@ -197,7 +197,7 @@ Resources:
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
-        - DynamoDBWritePolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref BusinessLineTableName
 
 #--------API REST --------
@@ -244,20 +244,20 @@ Resources:
   BusinessTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Ref BusinessTableName
+      TableName: !Ref BusinessesTableName
       AttributeDefinitions:
         -
           AttributeName: "id"
           AttributeType: "S"
         -
-          AttributeName: "businessLineId"
+          AttributeName: "userId"
           AttributeType: "S"
       KeySchema:
         -
           AttributeName: "id"
           KeyType: "HASH"
         -
-          AttributeName: "businessLineId"
+          AttributeName: "userId"
           KeyType: "RANGE"
       ProvisionedThroughput:
         ReadCapacityUnits: "5"

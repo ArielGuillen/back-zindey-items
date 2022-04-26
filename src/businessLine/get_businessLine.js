@@ -15,9 +15,6 @@ exports.lambdaHandler = async (event) => {
 
     const businessLineItems = await dynamo.scan({
       TableName: TABLE_NAME,
-      ExclusiveStartKey: {
-        "id": { "S": event.pathParameters.lastKey }
-      },
       Limit: 5
     }).promise();
 
