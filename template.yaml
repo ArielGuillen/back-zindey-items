@@ -14,6 +14,9 @@ Parameters:
   BusinessLineTableName: 
     Type: String
     Default: BusinessLineTable
+  WarehouseTableName: 
+    Type: String
+    Default: WarehouseTable
   ImagesBucketName: 
     Type: String
     Default: zindey-bucket-042222
@@ -23,12 +26,15 @@ Parameters:
 
 Globals:
   Function:
-      CodeUri: .
+      CodeUri: src/
       Runtime: nodejs14.x
       MemorySize: 256
       Timeout: 30
       Architectures:
         - x86_64
+      Layers:
+        - arn:aws:lambda:us-east-1:213198851588:layer:uuid:1
+        - arn:aws:lambda:us-east-1:213198851588:layer:jimp:1
 
 Resources:
 
@@ -36,7 +42,7 @@ Resources:
   GetItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/item/get_items.lambdaHandler
+      Handler: item/get_items.lambdaHandler
       Events:
         GetItemEvent:
           Type: Api
@@ -53,7 +59,7 @@ Resources:
   PostItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/item/create_item.lambdaHandler
+      Handler: item/create_item.lambdaHandler
       Events:
         PostItemEvent:
           Type: Api
@@ -74,7 +80,7 @@ Resources:
   PutItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/item/update_item.lambdaHandler
+      Handler: item/update_item.lambdaHandler
       Events:
         PutItemEvent:
           Type: Api
@@ -96,7 +102,7 @@ Resources:
   GetBusinessFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/business/get_business.lambdaHandler
+      Handler: business/get_business.lambdaHandler
       Events:
         GetBusinessEvent:
           Type: Api
@@ -113,7 +119,7 @@ Resources:
   PostBusinessFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/business/create_business.lambdaHandler
+      Handler: business/create_business.lambdaHandler
       Events:
         PostBusinessEvent:
           Type: Api
@@ -132,7 +138,7 @@ Resources:
   PutBusinessFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/business/update_business.lambdaHandler
+      Handler: business/update_business.lambdaHandler
       Events:
         PutBusinessEvent:
           Type: Api
@@ -152,7 +158,7 @@ Resources:
   GetBusinessLineFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/businessLine/get_businessLine.lambdaHandler
+      Handler: businessLine/get_businessLine.lambdaHandler
       Events:
         GetBusinessLineEvent:
           Type: Api
@@ -169,7 +175,7 @@ Resources:
   PostBusinessLineFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/businessLine/create_businessLine.lambdaHandler
+      Handler: businessLine/create_businessLine.lambdaHandler
       Events:
         PostBusinessLineEvent:
           Type: Api
@@ -186,7 +192,7 @@ Resources:
   PutBusinessLineFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/businessLine/update_businessLine.lambdaHandler
+      Handler: businessLine/update_businessLine.lambdaHandler
       Events:
         PutBusinessLineEvent:
           Type: Api
@@ -199,6 +205,58 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref BusinessLineTableName
+#--------Warehouse Functions --------
+
+  GetWarehouseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: warehouse/get_warehouse.lambdaHandler
+      Events:
+        GetWarehouseEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /warehouse
+            Method: GET
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WarehouseTableName
+
+  PostWarehouseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: warehouse/create_warehouse.lambdaHandler
+      Events:
+        PostWarehouseEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /warehouse
+            Method: POST
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WarehouseTableName
+
+  PutWarehouseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: warehouse/update_warehouse.lambdaHandler
+      Events:
+        PutWarehouseEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MyRestApi
+            Path: /warehouse/{id}
+            Method: PUT
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WarehouseTableName
 
 #--------API REST --------
   MyRestApi:
@@ -267,6 +325,22 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Ref BusinessLineTableName
+      AttributeDefinitions:
+        - 
+          AttributeName: "id"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "id"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+
+  WarehouseTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref WarehouseTableName
       AttributeDefinitions:
         - 
           AttributeName: "id"

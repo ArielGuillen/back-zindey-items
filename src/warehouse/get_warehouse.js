@@ -3,7 +3,7 @@ const dynamo = new AWS.DynamoDB.DocumentClient();
 
 exports.lambdaHandler = async (event) => {
 
-  const TABLE_NAME = "BusinessLineTable";
+  const TABLE_NAME = "WarehouseTable";
 
   const response = {
     isBase64Encoded: false,
@@ -13,19 +13,19 @@ exports.lambdaHandler = async (event) => {
 
   try {
 
-    const businessLineItems = await dynamo.scan({
+    const warehouseItems = await dynamo.scan({
       TableName: TABLE_NAME,
       Limit: 5
     }).promise();
 
     response.body = JSON.stringify({
-      businessLineItems,
-      LastEvaluatedKey: businessLineItems.LastEvaluatedKey
+      warehouseItems,
+      LastEvaluatedKey: warehouseItems.LastEvaluatedKey
     })
 
   } catch (error) {
     console.log(error);
-    response.body = JSON.stringify({ message: "Failed to get the business line items", error });
+    response.body = JSON.stringify({ message: "Failed to get the warehouse items", error });
   }
 
   return response;
