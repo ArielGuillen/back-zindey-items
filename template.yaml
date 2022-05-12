@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
 Description:
-  Backend Services SAM Template for Zindey App
+  Backend Services SAM Template for Zindey suite
 
 Parameters:
   AccountTableName: 
@@ -26,6 +26,9 @@ Parameters:
   RoleTableName: 
     Type: String
     Default: zindey-suite-role-table
+  WarehouseTableName: 
+    Type: String
+    Default: zindey-suite-warehouse-table
   ImagesS3BucketName: 
     Type: String
     Default: zindey-suite-business-bucket    
@@ -52,7 +55,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/account/
-      FunctionName: zindey-app-create-account
+      FunctionName: zindey-suite-create-account
       Handler:  create_account.lambdaHandler
       Environment:
         Variables:
@@ -74,7 +77,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/account/
-      FunctionName: zindey-app-update-account
+      FunctionName: zindey-suite-update-account
       Handler:  update_account.js
       Environment:
         Variables:
@@ -97,7 +100,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/business/
-      FunctionName: zindey-app-get-business
+      FunctionName: zindey-suite-get-business
       Handler:  get_business.lambdaHandler
       Environment:
         Variables:
@@ -119,7 +122,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/business/
-      FunctionName: zindey-app-create-business
+      FunctionName: zindey-suite-create-business
       Handler: create_business.lambdaHandler
       Environment:
         Variables:
@@ -148,7 +151,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/business/
-      FunctionName: zindey-app-update-business
+      FunctionName: zindey-suite-update-business
       Handler: update_business.lambdaHandler
       Environment:
         Variables:
@@ -174,7 +177,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/businessLine/
-      FunctionName: zindey-app-get-business-lines
+      FunctionName: zindey-suite-get-business-lines
       Handler: get_businessLines.lambdaHandler
       Environment:
         Variables:
@@ -196,7 +199,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/businessLine/
-      FunctionName: zindey-app-create-business-line
+      FunctionName: zindey-suite-create-business-line
       Handler: create_businessLine.lambdaHandler
       Environment:
         Variables:
@@ -212,13 +215,13 @@ Resources:
                Authorizer: CognitoAuthorizer
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref BusinessLine
+            TableName: !Ref BusinessLineTable
 
   UpdateBusinessLineFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/businessLine/
-      FunctionName: zindey-app-update-business-line
+      FunctionName: zindey-suite-update-business-line
       Handler: update_businessLine.lambdaHandler
       Environment:
         Variables:
@@ -240,7 +243,7 @@ Resources:
   GetItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: zindey-app-get-items
+      FunctionName: zindey-suite-get-items
       CodeUri: src/item/
       Handler: get_items.lambdaHandler
       Environment:
@@ -262,7 +265,7 @@ Resources:
   CreateItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: zindey-app-create-items
+      FunctionName: zindey-suite-create-items
       CodeUri: src/item/
       Handler: create_item.lambdaHandler
       Environment:
@@ -288,7 +291,7 @@ Resources:
   UpdateItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: zindey-app-update-items
+      FunctionName: zindey-suite-update-items
       CodeUri: src/item/
       Handler: update_item.lambdaHandler
       Environment:
@@ -316,7 +319,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/payment/
-      FunctionName: zindey-app-get-payment-plans
+      FunctionName: zindey-suite-get-payment-plans
       Handler: get_payment_plans.lambdaHandler
       Environment:
         Variables:
@@ -339,7 +342,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/role/
-      FunctionName: zindey-app-get-roles
+      FunctionName: zindey-suite-get-roles
       Handler: get_roles.lambdaHandler
       Environment:
         Variables:
@@ -359,7 +362,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/role/
-      FunctionName: zindey-app-create-role
+      FunctionName: zindey-suite-create-role
       Handler: create_role.lambdaHandler
       Environment:
         Variables:
@@ -388,7 +391,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/role/
-      FunctionName: zindey-app-update-role
+      FunctionName: zindey-suite-update-role
       Handler: update_role.lambdaHandler
       Environment:
         Variables:
@@ -408,7 +411,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/role/
-      FunctionName: zindey-app-validate-role
+      FunctionName: zindey-suite-validate-role
       Handler: validate_role.lambdaHandler
       Environment:
         Variables:
@@ -429,7 +432,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/policy/
-      FunctionName: zindey-app-get-policies
+      FunctionName: zindey-suite-get-policies
       Handler: get_policies.lambdaHandler
       Environment:
         Variables:
@@ -449,7 +452,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/policy/
-      FunctionName: zindey-app-create-policy
+      FunctionName: zindey-suite-create-policy
       Handler: create_policy.lambdaHandler
       Environment:
         Variables:
@@ -469,7 +472,7 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/policy/
-      FunctionName: zindey-app-update-policy
+      FunctionName: zindey-suite-update-policy
       Handler: update_policy.lambdaHandler
       Environment:
         Variables:
@@ -490,7 +493,7 @@ Resources:
   GetWarehousesFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: zindey-app-get-warehouses
+      FunctionName: zindey-suite-get-warehouses
       CodeUri: src/warehouse/
       Handler: get_warehouses.lambdaHandler
       Environment:
@@ -512,7 +515,7 @@ Resources:
   CreateWarehouseFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: zindey-app-create-warehouse
+      FunctionName: zindey-suite-create-warehouse
       CodeUri: src/warehouse/
       Handler: create_warehouse.lambdaHandler
       Environment:
@@ -534,7 +537,7 @@ Resources:
   UpdateWarehouseFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: zindey-app-update-warehouse
+      FunctionName: zindey-suite-update-warehouse
       CodeUri: src/warehouse/
       Handler: update_warehouse.lambdaHandler
       Environment:
@@ -784,7 +787,7 @@ Resources:
   ZindeyAPIRest:
     Type: AWS::Serverless::Api
     Properties:
-      Name: Zindey-API
+      Name: zindey-suite-api
       StageName:  dev
       MethodSettings: #Enable CloudWatch logs
         - LoggingLevel: ERROR
@@ -824,7 +827,26 @@ Resources:
             - category
             - price
 
-Outputs: 
-  MyFunction:
-    Description: "Create the GetItem Lambda function"
-    Value: !GetAtt GetItemFunction.Arn
+  ApiAccountConfig:
+    Type: "AWS::ApiGateway::Account"
+    Properties:
+      CloudWatchRoleArn: !GetAtt "ApiGatewayLoggingRole.Arn"
+  ApiGatewayLoggingRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - "apigateway.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+
+Outputs:
+  HelloWorldApi:
+    Description: "API Gateway endpoint URL for dev stage"
+    Value: !Sub 'https://${ZindeyAPIRest}.execute-api.${AWS::Region}.amazonaws.com/dev'
