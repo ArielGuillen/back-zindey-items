@@ -7,31 +7,31 @@ Description:
 Parameters:
   AccountTableName: 
     Type: String
-    Default: zindey-app-account-table
+    Default: zindey-suite-account-table
   BusinessTableName: 
     Type: String
-    Default: zindey-app-business-table
+    Default: zindey-suite-business-table
   BusinessLineTableName: 
     Type: String
-    Default: zindey-app-business-line-table
+    Default: zindey-suite-business-line-table
   ItemTableName: 
     Type: String
-    Default: zindey-app-item-table
+    Default: zindey-suite-item-table
   PaymentTableName: 
     Type: String
-    Default: zindey-app-payment-table
+    Default: zindey-suite-payment-table
   PolicyTableName: 
     Type: String
-    Default: zindey-app-policy-table
+    Default: zindey-suite-policy-table
   RoleTableName: 
     Type: String
-    Default: zindey-app-role-table
+    Default: zindey-suite-role-table
   ImagesS3BucketName: 
     Type: String
-    Default: zindey-app-business-bucket    
+    Default: zindey-suite-business-bucket    
   UserPoolName: 
     Type: String
-    Default: zindey-app-users
+    Default: zindey-suite-users
 
 Globals:
   Function:
