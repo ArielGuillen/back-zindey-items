@@ -1,35 +1,44 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
-Description: 
-  Test YAML template for the creation of the services that we will use in the project
+Description:
+  Backend Services SAM Template for Zindey App
 
 Parameters:
-  MyTableName: 
+  AccountTableName: 
     Type: String
-    Default: MyTableItem
-  BusinessesTableName: 
+    Default: zindey-app-account-table
+  BusinessTableName: 
     Type: String
-    Default: BusinessTable
+    Default: zindey-app-business-table
   BusinessLineTableName: 
     Type: String
-    Default: BusinessLineTable
-  WarehouseTableName: 
+    Default: zindey-app-business-line-table
+  ItemTableName: 
     Type: String
-    Default: WarehouseTable
-  ImagesBucketName: 
+    Default: zindey-app-item-table
+  PaymentTableName: 
     Type: String
-    Default: zindey-bucket-042222
-  MyCognitoUserPoolArn:
+    Default: zindey-app-payment-table
+  PolicyTableName: 
+    Type: String
+    Default: zindey-app-policy-table
+  RoleTableName: 
+    Type: String
+    Default: zindey-app-role-table
+  ImagesS3BucketName: 
+    Type: String
+    Default: zindey-app-business-bucket
+  CognitoUserPoolArn:
     Type: String
     Default: arn:aws:cognito-idp:us-east-1:213198851588:userpool/us-east-1_fvuuXTrCB
 
 Globals:
   Function:
-      CodeUri: src/
       Runtime: nodejs14.x
+      Timeout: 60
       MemorySize: 256
-      Timeout: 30
+      #Tracing: Active  #Analyze application performance
       Architectures:
         - x86_64
       Layers:
@@ -38,33 +47,232 @@ Globals:
 
 Resources:
 
-#--------Item Functions --------
-  GetItemFunction:
+#-------- Account Functions --------
+  CreateAccountFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: item/get_items.lambdaHandler
+      CodeUri: src/account/
+      FunctionName: zindey-app-create-account
+      Handler:  create_account.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountTableName
       Events:
-        GetItemEvent:
+        CreateAccountEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref MyRestApi
+            RestApiId:  !Ref ZindeyAPIRest
+            Path: /account
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:  !Ref AccountTable
+
+  UpdateAccountFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/account/
+      FunctionName: zindey-app-update-account
+      Handler:  update_account.js
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref AccountTableName
+      Events:
+        UpdateAccountEvent:
+          Type: Api
+          Properties:
+            RestApiId:  !Ref ZindeyAPIRest
+            Path: /account
+            Method: PUT
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName:  !Ref AccountTable
+
+#-------- Business Functions -------
+  GetBusinessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/business/
+      FunctionName: zindey-app-get-business
+      Handler:  get_business.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BusinessTableName
+      Events:
+        GetBusinessEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /business
+            Method: GET
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessTable
+
+  CreateBusinessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/business/
+      FunctionName: zindey-app-create-business
+      Handler: create_business.lambdaHandler
+      Environment:
+        Variables:
+          BUSINESS_TABLE_NAME:  !Ref BusinessTableName
+          ACCOUNT_TABLE_NAME: !Ref AccountTableName
+          BUCKET_NAME:  !Ref ImagesS3BucketName
+          UPDATE_ACCOUNT_LAMBDA:  !Ref UpdateAccountFunction
+      Events:
+        CreateBusinessEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /business
+            Method: POST
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessTable            
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AccountTable
+        - S3FullAccessPolicy:
+            BucketName: !Ref ImagesS3Bucket
+  
+  UpdateBusinessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/business/
+      FunctionName: zindey-app-update-business
+      Handler: update_business.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BusinessTableName
+          BUCKET_NAME:  !Ref ImagesS3BucketName
+      Events:
+        UpdateBusinessEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /business/{id}
+            Method: PUT
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessTable
+        - S3FullAccessPolicy:
+            BucketName: !Ref ImagesS3Bucket
+
+#------ BusinessLine Functions -----
+  GetBusinessLinesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/businessLine/
+      FunctionName: zindey-app-get-business-lines
+      Handler: get_businessLines.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BusinessLineTableName
+      Events:
+        GetBusinessLinesEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /businessLine
+            Method: GET
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessLineTable
+
+  CreateBusinessLineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/businessLine/
+      FunctionName: zindey-app-create-business-line
+      Handler: create_businessLine.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BusinessLineTableName
+      Events:
+        CreateBusinessLineEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /businessLine
+            Method: POST
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessLine
+
+  UpdateBusinessLineFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/businessLine/
+      FunctionName: zindey-app-update-business-line
+      Handler: update_businessLine.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BusinessLineTableName
+      Events:
+        UpdateBusinessLineEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /businessLine/{id}
+            Method: PUT
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BusinessLineTable
+
+#---------- Item Functions ---------
+  GetItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: zindey-app-get-items
+      CodeUri: src/item/
+      Handler: get_items.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTableName
+      Events:
+        GetItemsEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
             Path: /item
             Method: GET
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref MyTableName
+            TableName: !Ref ItemTable
 
-  PostItemFunction:
+  CreateItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: item/create_item.lambdaHandler
+      FunctionName: zindey-app-create-items
+      CodeUri: src/item/
+      Handler: create_item.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTableName
       Events:
-        PostItemEvent:
+        CreateItemEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref MyRestApi
+            RestApiId: !Ref ZindeyAPIRest
             Path: /item
             Method: POST
             Auth:
@@ -75,17 +283,22 @@ Resources:
               ValidateBody: true
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref MyTableName
+            TableName: !Ref ItemTable
 
-  PutItemFunction:
+  UpdateItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: item/update_item.lambdaHandler
+      FunctionName: zindey-app-update-items
+      CodeUri: src/item/
+      Handler: update_item.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTableName
       Events:
-        PutItemEvent:
+        UpdateItemEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref MyRestApi
+            RestApiId: !Ref ZindeyAPIRest
             Path: /item/{id}
             Method: PUT
             Auth:
@@ -96,185 +309,394 @@ Resources:
               ValidateBody: true
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref MyTableName
+            TableName: !Ref ItemTable
 
-#--------Business Functions --------
-  GetBusinessFunction:
+#-------- Payment Functions --------
+  GetPaymentPlansFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: business/get_business.lambdaHandler
+      CodeUri: src/payment/
+      FunctionName: zindey-app-get-payment-plans
+      Handler: get_payment_plans.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref PaymentTableName
       Events:
-        GetBusinessEvent:
-          Type: Api
+        GetPaymentPlansEvent:
+          Type: Api 
           Properties:
-            RestApiId: !Ref MyRestApi
-            Path: /business
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /payment
             Method: GET
             Auth:
-               Authorizer: CognitoAuthorizer
+              Authorizer: CognitoAuthorizer
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref BusinessesTableName
+            TableName:  !Ref PaymentPlanTable
 
-  PostBusinessFunction:
+#-------Role Functions-------
+  GetRolesFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: business/create_business.lambdaHandler
+      CodeUri: src/role/
+      FunctionName: zindey-app-get-roles
+      Handler: get_roles.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref RoleTableName
       Events:
-        PostBusinessEvent:
+        GetRolesEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref MyRestApi
-            Path: /business
-            Method: POST
-            Auth:
-               Authorizer: CognitoAuthorizer
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /role/{startKey}
+            Method: GET
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref BusinessesTableName
-        - S3FullAccessPolicy:
-            BucketName: !Ref ImagesBucketName
+            TableName: !Ref RoleTable
+
+  CreateRoleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/role/
+      FunctionName: zindey-app-create-role
+      Handler: create_role.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref RoleTableName
+      Events:
+        CreateRoleEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /role
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RoleTable
+        - LambdaInvokePolicy:
+            FunctionName: !Ref GetRolesFunction
+        - Statement:
+          - Sid: LambdaInvokePolicy
+            Effect: Allow
+            Action:
+            - lambda:InvokeAsync
+            - lambda:InvokeFunction
+            Resource: '*'
+
+  UpdateRoleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/role/
+      FunctionName: zindey-app-update-role
+      Handler: update_role.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref RoleTableName
+      Events:
+        UpdateRoleEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /role
+            Method: PUT
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref RoleTable
   
-  PutBusinessFunction:
+  ValidateRoleFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: business/update_business.lambdaHandler
+      CodeUri: src/role/
+      FunctionName: zindey-app-validate-role
+      Handler: validate_role.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref RoleTableName
       Events:
-        PutBusinessEvent:
+        ValidateRoleEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref MyRestApi
-            Path: /business/{id}
-            Method: PUT
-            Auth:
-               Authorizer: CognitoAuthorizer
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref BusinessesTableName
-        - S3FullAccessPolicy:
-            BucketName: !Ref ImagesBucketName
-
-#--------BusinessLine Functions --------
-  GetBusinessLineFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: businessLine/get_businessLine.lambdaHandler
-      Events:
-        GetBusinessLineEvent:
-          Type: Api
-          Properties:
-            RestApiId: !Ref MyRestApi
-            Path: /businessLine
-            Method: GET
-            Auth:
-               Authorizer: CognitoAuthorizer
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref BusinessLineTableName
-
-  PostBusinessLineFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: businessLine/create_businessLine.lambdaHandler
-      Events:
-        PostBusinessLineEvent:
-          Type: Api
-          Properties:
-            RestApiId: !Ref MyRestApi
-            Path: /businessLine
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /role/validation
             Method: POST
-            Auth:
-               Authorizer: CognitoAuthorizer
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref BusinessLineTableName
+            TableName: !Ref RoleTable
 
-  PutBusinessLineFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      Handler: businessLine/update_businessLine.lambdaHandler
-      Events:
-        PutBusinessLineEvent:
-          Type: Api
-          Properties:
-            RestApiId: !Ref MyRestApi
-            Path: /businessLine/{id}
-            Method: PUT
-            Auth:
-               Authorizer: CognitoAuthorizer
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref BusinessLineTableName
 #--------Warehouse Functions --------
 
-  GetWarehouseFunction:
+  GetWarehousesFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: warehouse/get_warehouse.lambdaHandler
+      FunctionName: zindey-app-get-warehouses
+      CodeUri: src/warehouse/
+      Handler: get_warehouses.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref WarehouseTableName
       Events:
-        GetWarehouseEvent:
+        GetWarehousesEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref MyRestApi
+            RestApiId: !Ref ZindeyAPIRest
             Path: /warehouse
             Method: GET
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref WarehouseTableName
+            TableName: !Ref WarehouseTable
 
-  PostWarehouseFunction:
+  CreateWarehouseFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: warehouse/create_warehouse.lambdaHandler
+      FunctionName: zindey-app-create-warehouse
+      CodeUri: src/warehouse/
+      Handler: create_warehouse.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref WarehouseTableName
       Events:
-        PostWarehouseEvent:
+        CreateWarehouseEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref MyRestApi
+            RestApiId: !Ref ZindeyAPIRest
             Path: /warehouse
             Method: POST
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref WarehouseTableName
+            TableName: !Ref WarehouseTable
 
-  PutWarehouseFunction:
+  UpdateWarehouseFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: warehouse/update_warehouse.lambdaHandler
+      FunctionName: zindey-app-update-warehouse
+      CodeUri: src/warehouse/
+      Handler: update_warehouse.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref WarehouseTableName
       Events:
-        PutWarehouseEvent:
+        UpdateWarehouseEvent:
           Type: Api
           Properties:
-            RestApiId: !Ref MyRestApi
+            RestApiId: !Ref ZindeyAPIRest
             Path: /warehouse/{id}
             Method: PUT
             Auth:
                Authorizer: CognitoAuthorizer
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref WarehouseTableName
+            TableName: !Ref WarehouseTable
 
-#--------API REST --------
-  MyRestApi:
+#--------- Dynamo DB Tables --------
+  AccountTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref AccountTableName
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType:  S
+        - AttributeName: businessId
+          AttributeType:  S
+      KeySchema:
+        - AttributeName: id
+          KeyType:  HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits:  5
+        WriteCapacityUnits: 5
+      GlobalSecondaryIndexes:
+        - IndexName: GSIFindByBusinessId
+          KeySchema:
+            - AttributeName: businessId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:  
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+  
+  BusinessTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref BusinessTableName
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  
+  BusinessLineTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref BusinessLineTableName
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  ItemTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref ItemTableName
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  PaymentPlanTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref PaymentTableName
+      AttributeDefinitions:
+        - AttributeName: name
+          AttributeType:  S
+      KeySchema:
+        - AttributeName: name
+          KeyType:  HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits:  5
+        WriteCapacityUnits: 5
+
+  RoleTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref RoleTableName
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: name
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: name
+          KeyType: RANGE
+      ProvisionedThroughput:      
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      GlobalSecondaryIndexes:
+        - IndexName: GSIFindByName
+          KeySchema:
+            - AttributeName: name
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:  
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+
+  PolicyTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref PolicyTableName
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: name
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        - AttributeName: name
+          KeyType: RANGE
+      ProvisionedThroughput:      
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      GlobalSecondaryIndexes:
+        - IndexName: GSIFindByName
+          KeySchema:
+            - AttributeName: name
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:  
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+  
+  WarehouseTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref WarehouseTableName
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+        
+#------------ S3 Bucket ------------
+  ImagesS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref ImagesS3BucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+  
+  ImagesBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ImagesS3Bucket
+      PolicyDocument:
+        Id: BucketPolicy
+        Version: 2012-10-17
+        Statement:
+          - Action: 
+              - 's3:GetObject'
+              - 's3:PutObject'
+              - 's3:DeleteObject'
+            Sid: "s3BucketPolicy"
+            Effect: Allow
+            Principal: '*'
+            Resource: !Sub arn:aws:s3:::${ImagesS3Bucket}
+            Resource: !Sub arn:aws:s3:::${ImagesS3Bucket}/*
+
+#-------- Cognito Userpool ---------
+
+#------------ API REST -------------
+  ZindeyAPIRest:
     Type: AWS::Serverless::Api
     Properties:
-      Name: MyRestAPI
-      StageName: Test
+      Name: Zindey-API
+      StageName:  dev
+      MethodSettings: #Enable CloudWatch logs
+        - LoggingLevel: ERROR
+          ResourcePath: '/*'  # allows for logging on any resource
+          HttpMethod: '*' # allows for logging on any method
       GatewayResponses:
         UNAUTHORIZED:
           ResponseTemplates:
-            "application/json": '{ "message": "Invalid authorization token"}'
+            "application/json": '{  "message":  "Invalid Authorization Token" }'
         BAD_REQUEST_BODY:
           ResponseTemplates:
-            "application/json": '{ "message": "$context.error.validationErrorString"}'
+            "application/json": '{  "message":  "$context.error.validationErrorString" }'
       Auth:
-         Authorizers:
-           CognitoAuthorizer:
-              UserPoolArn: !Ref MyCognitoUserPoolArn
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Ref CognitoUserPoolArn
       Models:
         ItemModel:
           $schema: 'http://json-schema.org/draft-04/schema#'
@@ -297,105 +719,6 @@ Resources:
             - name
             - category
             - price
-
-#--------DynamoDB Tables --------
-  BusinessTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Ref BusinessesTableName
-      AttributeDefinitions:
-        -
-          AttributeName: "id"
-          AttributeType: "S"
-        -
-          AttributeName: "userId"
-          AttributeType: "S"
-      KeySchema:
-        -
-          AttributeName: "id"
-          KeyType: "HASH"
-        -
-          AttributeName: "userId"
-          KeyType: "RANGE"
-      ProvisionedThroughput:
-        ReadCapacityUnits: "5"
-        WriteCapacityUnits: "5"
-
-  BusinessLineTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Ref BusinessLineTableName
-      AttributeDefinitions:
-        - 
-          AttributeName: "id"
-          AttributeType: "S"
-      KeySchema:
-        -
-          AttributeName: "id"
-          KeyType: "HASH"
-      ProvisionedThroughput:
-        ReadCapacityUnits: "5"
-        WriteCapacityUnits: "5"
-
-  WarehouseTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Ref WarehouseTableName
-      AttributeDefinitions:
-        - 
-          AttributeName: "id"
-          AttributeType: "S"
-      KeySchema:
-        -
-          AttributeName: "id"
-          KeyType: "HASH"
-      ProvisionedThroughput:
-        ReadCapacityUnits: "5"
-        WriteCapacityUnits: "5"
-
-  MyTableItem:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Ref MyTableName
-      AttributeDefinitions:
-        -
-          AttributeName: "id"
-          AttributeType: "S"
-      KeySchema:
-        -
-          AttributeName: "id"
-          KeyType: "HASH"
-      ProvisionedThroughput:
-        ReadCapacityUnits: "5"
-        WriteCapacityUnits: "5"
-
-  ImagesS3Bucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Ref ImagesBucketName
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        BlockPublicPolicy: false
-        IgnorePublicAcls: false
-        RestrictPublicBuckets: false
-  
-  ImagesBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref ImagesS3Bucket
-      PolicyDocument:
-        Id: BucketPolicy
-        Version: 2012-10-17
-        Statement:
-          - Action: 
-              - 's3:GetObject'
-              - 's3:PutObject'
-              - 's3:DeleteObject'
-            Sid: "BucketPolicy"
-            Effect: Allow
-            Principal: '*'
-            Resource: !Sub arn:aws:s3:::${ImagesS3Bucket}
-            Resource: !Sub arn:aws:s3:::${ImagesS3Bucket}/*
 
 Outputs: 
   MyFunction:

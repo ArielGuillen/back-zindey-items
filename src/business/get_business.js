@@ -1,9 +1,9 @@
 const AWS = require("aws-sdk");
 const dynamo = new AWS.DynamoDB.DocumentClient();
 
-exports.lambdaHandler =  async ( event ) => {
+const TABLE_NAME = process.env.TABLE_NAME;
 
-    const TABLE_NAME = "BusinessTable";
+exports.lambdaHandler =  async ( event ) => {
     
     const response = {
         isBase64Encoded: false,
@@ -23,7 +23,11 @@ exports.lambdaHandler =  async ( event ) => {
 
     } catch( error ){
         console.log( error );
-        response.body = JSON.stringify( { message: "Failed to upload the business line data",  error } );
+        response.statusCode = 500;
+        response.body = JSON.stringify( { 
+            message: "Failed to get business list",  
+            error: error.message 
+        } );
     }
     
     return response;

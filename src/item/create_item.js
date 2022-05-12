@@ -3,31 +3,27 @@ const AWS = require("aws-sdk");
 const dynamo = new AWS.DynamoDB.DocumentClient();
 const uuid = require('uuid');
 
-exports.lambdaHandler = async ( event ) => {
+const TABLE_NAME = process.env.TABLE_NAME;
 
-    //const BUCKET_NAME = 'bucket-test-040422';
-    const TABLE_NAME = 'MyTableItem';
+exports.lambdaHandler = async ( event ) => {
 
     const response = {
         isBase64Encoded: false,
         statusCode: 200,
-        body: JSON.stringify({ message: "Successfully uploaded item" }),
+        body: JSON.stringify({ message: "Create item" }),
     };
 
-    //Transform the JSON string of body value to a javascript object
-    let { 
-        name,
-        category, 
-        price,
-        //base64File 
-    } = JSON.parse(event.body);
-
-    //Get the image and decode from base64
-    //const decodedFile = Buffer.from( base64File.replace( /^data:image\/\w+;base64,/, "" ), "base64" );
-
-    const id = uuid.v4();
-
     try {
+
+        //Transform the JSON string of body value to a javascript object
+        let { 
+            name,
+            category, 
+            price
+        } = JSON.parse(event.body);
+    
+        const id = uuid.v4();
+
         await dynamo.put({
             TableName: TABLE_NAME,
             Item: {
@@ -37,17 +33,9 @@ exports.lambdaHandler = async ( event ) => {
                 category
             }
         }).promise();
-
-        //upload to s3 bucket
-        /*await s3.putObject({
-            Bucket: BUCKET_NAME,
-            Key: `images/${new Date().toISOString()}.jpeg`,
-            Body: decodedFile,
-            ContentType: "image/jpeg",
-        }).promise();*/
         
         response.body = JSON.stringify({ 
-            message: "Successfully uploaded item",
+            message: "Created item successfully",
             id,
             name,
             price,
@@ -56,8 +44,11 @@ exports.lambdaHandler = async ( event ) => {
         
     } catch (error) {
         console.error(error);
-        response.body = JSON.stringify({ message: "Item failed to upload", errorMessage: error });
         response.statusCode = 500;
+        response.body = JSON.stringify({ 
+            message: "Failed to upload Item", 
+            error: error.message 
+        });
     }
     return response;
 }

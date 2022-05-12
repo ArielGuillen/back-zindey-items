@@ -8,26 +8,24 @@ exports.lambdaHandler =  async ( event ) => {
     const response = {
         isBase64Encoded: false,
         statusCode: 200,
-        body: JSON.stringify({ message: "GET Items list" }),
+        body: JSON.stringify({ message: "" }),
     };
 
     try{
 
-        const items = await dynamo.scan({ 
-            TableName: TABLE_NAME,
-            Limit: 10
+        const businessLineItems = await dynamo.scan({ 
+            TableName: TABLE_NAME
         }).promise();
 
         response.body = JSON.stringify( { 
-            items,
-            lastEvaluatedKey: items.LastEvaluatedKey
+            businessLineItems
         });
 
-    } catch( error ){
+    }catch( error ){
         console.log( error );
         response.statusCode = 500;
         response.body = JSON.stringify( { 
-            message: "Failed to get items list",  
+            message: "Failed to get business lines list",  
             error: error.message 
         } );
     }

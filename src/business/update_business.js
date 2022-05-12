@@ -2,57 +2,69 @@ const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB.DocumentClient();
 const s3 = new AWS.S3();
 
+const TABLE_NAME = process.env.TABLE_NAME;
+const BUCKET_NAME = process.env.BUCKET_NAME;
+
 exports.lambdaHandler = async( event ) => {
 
-    const BUCKET_NAME = 'zindey-bucket-042222';
-    const TABLE_NAME = 'BusinessTable';
-
     const response = {
-        isBase64Encoded: false,
         statusCode: 200,
-        body: JSON.stringify({ message: "Successfully uploaded business" }),
+        body: JSON.stringify({ message: "Business updated successfully" }),
     };
     
-    //Get the id from the url params
-    const id = event.pathParameters.id;
-
-    let {
-        name,
-        logo,        
-        businessLineId,
-    } = JSON.parse ( event.body );
-
     try{
 
-        //Get the image and decode from base64
-        const decodedFile = Buffer.from( logo.replace( /^data:image\/\w+;base64,/, "" ), "base64" );
+        //Get the id from the url params
+        const id = event.pathParameters.id;
+
+        let {
+            accountId,
+            name,
+            businessLineId,
+            logo,
+            branches,
+            warehouses
+        } = JSON.parse ( event.body );
+
+        /*
+        //Get the image decoded and optimized
+        const resizedImage = await compress_image( logoBase64 );
         
+        //Create object with the s3 params to upload the file
         let s3Params = {
             Bucket: BUCKET_NAME,
-            Key: `images/item-${id}.jpeg`,
-            Body: decodedFile,
+            Key: `business-logo-${id}.jpeg`,
+            Body: resizedImage,
             ContentType: "image/jpeg",
         }
-        await s3.putObject( s3Params ).promise();
 
-        const logoUrl = `https://${BUCKET_NAME}.s3.amazonaws.com/images/item-${id}.jpeg`
+        await s3.putObject( s3Params ).promise();
+        const logoUrl = `https://${BUCKET_NAME}.s3.amazonaws.com/business-logo-${id}.jpeg`
         
+        */
         let dynamoParams = {
-            TableName : TABLE_NAME,
+            TableName : BUSINESS_TABLE_NAME,
             Item: {
                 id,
-                businessLineId,
+                accountId,
                 name,
-                logo: logoUrl
+                businessLineId,
+                logo,
+                branches,
+                warehouses
             } 
         }
         await dynamo.put( dynamoParams ).promise();
-
-        response.body= JSON.stringify( { message: "Successfully upload the business data"});
+        
+        response.body= JSON.stringify( { message: "Business updated successfully"});
 
     }catch( error ){
         console.log( error );
-        response.body = JSON.stringify( { message: "Failed to upload the business data",  error } );
+        response.statusCode = 500;
+        response.body = JSON.stringify( { 
+            message: "Failed to update business",  
+            error: error.message 
+        } );
     }
 
     return response;
