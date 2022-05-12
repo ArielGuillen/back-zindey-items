@@ -28,10 +28,10 @@ Parameters:
     Default: zindey-app-role-table
   ImagesS3BucketName: 
     Type: String
-    Default: zindey-app-business-bucket
-  CognitoUserPoolArn:
+    Default: zindey-app-business-bucket    
+  UserPoolName: 
     Type: String
-    Default: arn:aws:cognito-idp:us-east-1:213198851588:userpool/us-east-1_fvuuXTrCB
+    Default: zindey-app-users
 
 Globals:
   Function:
@@ -424,6 +424,67 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref RoleTable
 
+#------- Policy Functions-------
+  GetPoliciesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/policy/
+      FunctionName: zindey-app-get-policies
+      Handler: get_policies.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref PolicyTableName
+      Events:
+        GetPoliciesEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /policy/{startKey}
+            Method: GET
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PolicyTable
+
+  CreatePolicyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/policy/
+      FunctionName: zindey-app-create-policy
+      Handler: create_policy.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref PolicyTableName
+      Events:
+        CreatePolicyEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /policy
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PolicyTable
+
+  UpdatePolicyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/policy/
+      FunctionName: zindey-app-update-policy
+      Handler: update_policy.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref PolicyTableName
+      Events:
+        UpdatePolicyEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /policy
+            Method: PUT
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PolicyTable
+
 #--------Warehouse Functions --------
 
   GetWarehousesFunction:
@@ -675,6 +736,49 @@ Resources:
             Resource: !Sub arn:aws:s3:::${ImagesS3Bucket}/*
 
 #-------- Cognito Userpool ---------
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Ref UserPoolName
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+          RequireUppercase: true
+      UsernameAttributes:
+        - email
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Mutable: true
+          Required: true          
+          StringAttributeConstraints: 
+            MaxLength: 320
+            MinLength: 10
+        - AttributeDataType: String
+          DeveloperOnlyAttribute: true
+          Name: paymentPlan
+          Mutable: true
+          Required: false
+          StringAttributeConstraints: 
+            MaxLength: 40
+            MinLength: 10
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref CognitoUserPool
+      ClientName: !Ref UserPoolName 
+      GenerateSecret: false
+      RefreshTokenValidity: 1
+      AccessTokenValidity: 60
+      IdTokenValidity: 1
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: days
+        RefreshToken: days
 
 #------------ API REST -------------
   ZindeyAPIRest:
@@ -696,7 +800,7 @@ Resources:
       Auth:
         Authorizers:
           CognitoAuthorizer:
-            UserPoolArn: !Ref CognitoUserPoolArn
+            UserPoolArn: !GetAtt CognitoUserPool.Arn
       Models:
         ItemModel:
           $schema: 'http://json-schema.org/draft-04/schema#'
