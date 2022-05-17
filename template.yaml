@@ -29,9 +29,9 @@ Parameters:
   WarehouseTableName: 
     Type: String
     Default: zindey-suite-warehouse-table
-  ImagesS3BucketName: 
+  S3BucketName: 
     Type: String
-    Default: zindey-suite-business-bucket    
+    Default: zindey-suite-business-bucket-dev
   UserPoolName: 
     Type: String
     Default: zindey-suite-users
@@ -45,8 +45,7 @@ Globals:
       Architectures:
         - x86_64
       Layers:
-        - arn:aws:lambda:us-east-1:213198851588:layer:uuid:1
-        - arn:aws:lambda:us-east-1:213198851588:layer:jimp:1
+        - arn:aws:lambda:us-east-1:916649391203:layer:uudi:1
 
 Resources:
 
@@ -124,12 +123,13 @@ Resources:
       CodeUri: src/business/
       FunctionName: zindey-suite-create-business
       Handler: create_business.lambdaHandler
+      Layers:
+        - arn:aws:lambda:us-east-1:916649391203:layer:jimp:1
       Environment:
         Variables:
           BUSINESS_TABLE_NAME:  !Ref BusinessTableName
           ACCOUNT_TABLE_NAME: !Ref AccountTableName
-          BUCKET_NAME:  !Ref ImagesS3BucketName
-          UPDATE_ACCOUNT_LAMBDA:  !Ref UpdateAccountFunction
+          BUCKET_NAME:  !Ref S3BucketName
       Events:
         CreateBusinessEvent:
           Type: Api
@@ -145,7 +145,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref AccountTable
         - S3FullAccessPolicy:
-            BucketName: !Ref ImagesS3Bucket
+            BucketName: !Ref S3Bucket
   
   UpdateBusinessFunction:
     Type: AWS::Serverless::Function
@@ -156,7 +156,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref BusinessTableName
-          BUCKET_NAME:  !Ref ImagesS3BucketName
+          BUCKET_NAME:  !Ref S3BucketName
       Events:
         UpdateBusinessEvent:
           Type: Api
@@ -170,7 +170,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref BusinessTable
         - S3FullAccessPolicy:
-            BucketName: !Ref ImagesS3Bucket
+            BucketName: !Ref S3Bucket
 
 #------ BusinessLine Functions -----
   GetBusinessLinesFunction:
@@ -421,7 +421,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /role/validation
+            Path: /role/validate
             Method: POST
       Policies:
         - DynamoDBCrudPolicy:
@@ -457,6 +457,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref PolicyTableName
+          LAMBDA_NAME:  !Ref ValidatePolicyFunction
       Events:
         CreatePolicyEvent:
           Type: Api
@@ -467,6 +468,15 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PolicyTable
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ValidatePolicyFunction
+        - Statement:
+          - Sid: LambdaInvokePolicy
+            Effect: Allow
+            Action:
+            - lambda:InvokeAsync
+            - lambda:InvokeFunction
+            Resource: '*'
 
   UpdatePolicyFunction:
     Type: AWS::Serverless::Function
@@ -477,6 +487,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref PolicyTableName
+          LAMBDA_NAME:  !Ref ValidatePolicyFunction
       Events:
         UpdatePolicyEvent:
           Type: Api
@@ -484,6 +495,35 @@ Resources:
             RestApiId: !Ref ZindeyAPIRest
             Path: /policy
             Method: PUT
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PolicyTable
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ValidatePolicyFunction
+        - Statement:
+          - Sid: LambdaInvokePolicy
+            Effect: Allow
+            Action:
+            - lambda:InvokeAsync
+            - lambda:InvokeFunction
+            Resource: '*'
+
+  ValidatePolicyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/policy/
+      FunctionName: zindey-suite-validate-policy
+      Handler: validate_policy.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref PolicyTableName
+      Events:
+        ValidatePolicyEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /policy/validate
+            Method: POST
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PolicyTable
@@ -679,8 +719,6 @@ Resources:
       KeySchema:
         - AttributeName: id
           KeyType: HASH
-        - AttributeName: name
-          KeyType: RANGE
       ProvisionedThroughput:      
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -710,10 +748,10 @@ Resources:
         WriteCapacityUnits: 5
         
 #------------ S3 Bucket ------------
-  ImagesS3Bucket:
+  S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref ImagesS3BucketName
+      BucketName: !Ref S3BucketName
       PublicAccessBlockConfiguration:
         BlockPublicAcls: false
         BlockPublicPolicy: false
@@ -723,7 +761,7 @@ Resources:
   ImagesBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: !Ref ImagesS3Bucket
+      Bucket: !Ref S3Bucket
       PolicyDocument:
         Id: BucketPolicy
         Version: 2012-10-17
@@ -735,8 +773,8 @@ Resources:
             Sid: "s3BucketPolicy"
             Effect: Allow
             Principal: '*'
-            Resource: !Sub arn:aws:s3:::${ImagesS3Bucket}
-            Resource: !Sub arn:aws:s3:::${ImagesS3Bucket}/*
+            Resource: !Sub arn:aws:s3:::${S3Bucket}
+            Resource: !Sub arn:aws:s3:::${S3Bucket}/*
 
 #-------- Cognito Userpool ---------
   CognitoUserPool:
@@ -769,11 +807,30 @@ Resources:
             MaxLength: 40
             MinLength: 10
 
+  CognitoUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties: 
+      Domain: zindey-suite
+      UserPoolId: !Ref CognitoUserPool
+
   CognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
     Properties:
       UserPoolId: !Ref CognitoUserPool
-      ClientName: !Ref UserPoolName 
+      ClientName: !Ref UserPoolName
+      SupportedIdentityProviders: 
+        - COGNITO
+      CallbackURLs: 
+        - https://www.zindey.com
+      LogoutURLs: 
+        - https://www.zindey.com
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows: 
+        - implicit
+      AllowedOAuthScopes:
+        - phone
+        - email
+        - openid 
       GenerateSecret: false
       RefreshTokenValidity: 1
       AccessTokenValidity: 60
@@ -831,6 +888,7 @@ Resources:
     Type: "AWS::ApiGateway::Account"
     Properties:
       CloudWatchRoleArn: !GetAtt "ApiGatewayLoggingRole.Arn"
+  
   ApiGatewayLoggingRole:
     Type: "AWS::IAM::Role"
     Properties:
