@@ -2,12 +2,12 @@ version = 0.1
 [default]
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "zindey-suite-dev-ariel-051322"
-s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1x0e3zjlhnw43"
-s3_prefix = "zindey-suite-dev-ariel-051322"
+stack_name = "zindey-suite-051222"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-k6uopu3b3yob"
+s3_prefix = "zindey-suite-051222"
 region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "AccountTableName=\"zindey-suite-account-table\" BusinessTableName=\"zindey-suite-business-table\" BusinessLineTableName=\"zindey-suite-business-line-table\" ItemTableName=\"zindey-suite-item-table\" PaymentTableName=\"zindey-suite-payment-table\" PolicyTableName=\"zindey-suite-policy-table\" RoleTableName=\"zindey-suite-role-table\" WarehouseTableName=\"zindey-suite-warehouse-table\" S3BucketName=\"zindey-suite-business-s3-bucket\" UserPoolName=\"zindey-suite-users\""
+parameter_overrides = "AccountTableName=\"zindey-suite-account-table\" BusinessTableName=\"zindey-suite-business-table\" BusinessLineTableName=\"zindey-suite-business-line-table\" ItemTableName=\"zindey-suite-item-table\" PaymentTableName=\"zindey-suite-payment-table\" PolicyTableName=\"zindey-suite-policy-table\" RoleTableName=\"zindey-suite-role-table\" WarehouseTableName=\"zindey-suite-warehouse-table\" S3BucketName=\"zindey-suite-business-bucket\" UserPoolName=\"zindey-suite-users\""
 image_repositories = []
 disable_rollback = true

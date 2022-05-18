@@ -45,7 +45,7 @@ Globals:
       Architectures:
         - x86_64
       Layers:
-        - arn:aws:lambda:us-east-1:916649391203:layer:uudi:1
+        - arn:aws:lambda:us-east-1:213198851588:layer:zindey-devs:1
 
 Resources:
 
@@ -123,8 +123,6 @@ Resources:
       CodeUri: src/business/
       FunctionName: zindey-suite-create-business
       Handler: create_business.lambdaHandler
-      Layers:
-        - arn:aws:lambda:us-east-1:916649391203:layer:jimp:1
       Environment:
         Variables:
           BUSINESS_TABLE_NAME:  !Ref BusinessTableName
@@ -885,7 +883,7 @@ Resources:
   CognitoUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties: 
-      Domain: zindey-suite
+      Domain: zindey-suite-dev
       UserPoolId: !Ref CognitoUserPool
 
   CognitoUserPoolClient:
