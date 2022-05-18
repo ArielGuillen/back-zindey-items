@@ -1,14 +1,15 @@
 const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB.DocumentClient();
-var lambda = new AWS.Lambda();
 
 const TABLE_NAME = process.env.TABLE_NAME;
 const LAMBDA_NAME = process.env.LAMBDA_NAME;
 
+const validate_name = require('./validate_name.js');
+
 exports.lambdaHandler = async( event ) => {
     const response  = await update_policy( event );
     return response;
-}
+};
 
 async function update_policy( event ){ 
 
@@ -25,9 +26,9 @@ async function update_policy( event ){
 
         let { name, statements } = JSON.parse ( event.body );
 
-        const status = await validate_policy_name( name );
+        const result = await validate_name( LAMBDA_NAME, name );
 
-        if ( status ) {
+        if ( result.status || result.id == id ) {
 
             let params = {
                 TableName : TABLE_NAME,
@@ -40,16 +41,16 @@ async function update_policy( event ){
 
             await dynamo.put ( params ).promise();
             response.body= JSON.stringify({ 
-                message: `Policy ${name} updated successfully`,
+                message: `Policy -${name}- updated successfully`,
                 id,
                 name,
                 statements
             });
         }else{
             response.statusCode = 403;
-            response.body = JSON.stringify( { 
+            response.body = JSON.stringify( {
                 message: "Failed to update policy",
-                error: `Policy "${name}" already exist`
+                error: `Policy -${name}- already exists`
             } );
         }
 
@@ -63,24 +64,4 @@ async function update_policy( event ){
     }
 
     return response;
-}
-
-async function validate_policy_name( name ){
-
-    //Create the object to invoke the validation lambda 
-    let lambdaParams = {
-        FunctionName: LAMBDA_NAME,
-        InvocationType: 'RequestResponse',
-        LogType: 'Tail',
-        Payload: JSON.stringify( { name })
-    };
-
-
-    //Invoke lambda validate_role to check if the role name already exists
-    const { Payload } = await lambda.invoke(lambdaParams).promise();
-    const { body } = JSON.parse(Payload);
-    const lambdaResult = JSON.parse(body);
-   
-    return lambdaResult.status;
-
 }

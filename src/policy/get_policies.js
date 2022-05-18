@@ -17,9 +17,10 @@ async function get_policies(  event ){
     };
 
     try{
-        //Create the object with the Dynamo params
+        //Get the start key from the url params
         let startKey = event.pathParameters.startKey;
         
+        //Create the object with the Dynamo params
         const policies = await dynamo.scan({
             TableName : TABLE_NAME,
             ExclusiveStartKey: {
@@ -41,6 +42,7 @@ async function get_policies(  event ){
 
     }catch( error ){
         console.log( error );
+        response.statusCode = 500;
         response.body = JSON.stringify( { 
             message: "Failed to get policies", 
             error: error.message

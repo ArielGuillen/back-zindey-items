@@ -367,6 +367,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref RoleTableName
+          LAMBDA_NAME:  !Ref ValidateRoleFunction
       Events:
         CreateRoleEvent:
           Type: Api
@@ -374,11 +375,15 @@ Resources:
             RestApiId: !Ref ZindeyAPIRest
             Path: /role
             Method: POST
+          RequestModel:
+              Model: ItemModel
+              Required: true
+              ValidateBody: true
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RoleTable
         - LambdaInvokePolicy:
-            FunctionName: !Ref GetRolesFunction
+            FunctionName: !Ref ValidateRoleFunction
         - Statement:
           - Sid: LambdaInvokePolicy
             Effect: Allow
@@ -396,6 +401,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref RoleTableName
+          LAMBDA_NAME:  !Ref ValidateRoleFunction
       Events:
         UpdateRoleEvent:
           Type: Api
@@ -406,6 +412,15 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RoleTable
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ValidateRoleFunction
+        - Statement:
+          - Sid: LambdaInvokePolicy
+            Effect: Allow
+            Action:
+            - lambda:InvokeAsync
+            - lambda:InvokeFunction
+            Resource: '*'
   
   ValidateRoleFunction:
     Type: AWS::Serverless::Function
@@ -691,8 +706,6 @@ Resources:
       KeySchema:
         - AttributeName: id
           KeyType: HASH
-        - AttributeName: name
-          KeyType: RANGE
       ProvisionedThroughput:      
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
@@ -777,6 +790,7 @@ Resources:
             Resource: !Sub arn:aws:s3:::${S3Bucket}/*
 
 #-------- Cognito Userpool ---------
+
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -884,6 +898,44 @@ Resources:
             - category
             - price
 
+  #------------ Validation Models -------------
+  RoleModel:
+    Type: AWS::ApiGateway::Model
+    Properties: 
+      ContentType: application/json
+      Description: Validation Model to Role functions
+      Name: RoleModel
+      RestApiId: !Ref ZindeyAPIRest
+      Schema: 
+        $schema: 'http://json-schema.org/draft-04/schema#'
+        title: RoleModel
+        type: object
+        properties:
+          name:
+            type: string
+            minLength: 10
+          policies:
+            type: array
+            items:
+              type: object
+              properties:
+                service:
+                  type: string
+                resources:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name: 
+                        type: string
+                      actions:
+                        type: array
+                        items:
+                          type: string
+        required:
+          - name
+          - policies
+  #------------ API Configure -------------
   ApiAccountConfig:
     Type: "AWS::ApiGateway::Account"
     Properties:

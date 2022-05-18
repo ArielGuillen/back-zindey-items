@@ -1,44 +1,45 @@
 const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB.DocumentClient();
-var lambda = new AWS.Lambda();
 
 const uuid = require('uuid');
+
 const TABLE_NAME = process.env.TABLE_NAME;
 const LAMBDA_NAME = process.env.LAMBDA_NAME;
 
-exports.lambdaHandler = async( event ) => {
-    const response  = await create_policy( event );
-    return response;
-}
+const validate_name = require('./validate_name.js');
 
-async function create_policy(  event ){
-    
-    let response = {
+exports.lambdaHandler = async( event ) => {
+    const response  = await update_policy( event );
+    return response;
+};
+
+async function update_policy( event ){ 
+
+    const response = {
         statusCode: 200,
         body: JSON.stringify({ message: 'Create Policy' }),
     };
     
     try{
-
+        
         let { name, statements } = JSON.parse ( event.body );
 
-        const status = await validate_policy_name( name );
+        const result = await validate_name( LAMBDA_NAME, name );
 
-        if ( status ) {
-            //Generate id
+        if ( result.status ) {
             const id = uuid.v4();
-
-            await dynamo.put ( {
+            let params = {
                 TableName : TABLE_NAME,
                 Item: {
                     id,
                     name,
                     statements
                 }
-            } ).promise();
+            };
 
+            await dynamo.put ( params ).promise();
             response.body= JSON.stringify({ 
-                message: `Policy ${name} created successfully`,
+                message: `Policy -${name}- created successfully`,
                 id,
                 name,
                 statements
@@ -47,7 +48,7 @@ async function create_policy(  event ){
             response.statusCode = 403;
             response.body = JSON.stringify( { 
                 message: "Failed to create policy",
-                error: `Policy "${name}" already exist`
+                error: `Policy -${name}- already exists`
             } );
         }
 
@@ -61,24 +62,4 @@ async function create_policy(  event ){
     }
 
     return response;
-}
-
-async function validate_policy_name( name ){
-
-    //Create the object to invoke the validation lambda 
-    let lambdaParams = {
-        FunctionName: LAMBDA_NAME,
-        InvocationType: 'RequestResponse',
-        LogType: 'Tail',
-        Payload: JSON.stringify( { name })
-    };
-
-
-    //Invoke lambda validate_role to check if the role name already exists
-    const { Payload } = await lambda.invoke(lambdaParams).promise();
-    const { body } = JSON.parse(Payload);
-    const lambdaResult = JSON.parse(body);
-   
-    return lambdaResult.status;
-
 }

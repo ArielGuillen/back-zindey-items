@@ -6,14 +6,14 @@ const TABLE_NAME = process.env.TABLE_NAME;
 exports.lambdaHandler = async ( event ) => {
     const response  = await validate_policy( event );
     return response;
-}
+};
 
 async function validate_policy( event ) {
 
     //Create the response object
     let response = {
         statusCode: 200,
-        body: JSON.stringify( { message: "Validate policy name", status: false} )
+        body: JSON.stringify( { message: "Validate policy name"} )
     };
 
     try{
@@ -34,14 +34,20 @@ async function validate_policy( event ) {
         };
         
         const result = await dynamo.query(params).promise();
-        response.body = JSON.stringify({ message: "Policy list", result });
 
         // Check if the result contain a value, the name is repeat
         if( result.Count == 0 )
-            response.body = JSON.stringify({ message: `Policy name ${name} available`, status: true });
+            response.body = JSON.stringify({ 
+                status: true,
+                message: `Policy name ${name} available`,
+            });
         else{
             response.statusCode = 403;
-            response.body = JSON.stringify({ message: `Policy ${name} already exist`, status: false });
+            response.body = JSON.stringify({ 
+                status: false,
+                message: `Policy ${name} already exist`, 
+                id: result.Items[0].id
+            });
         }
     }catch( error ){
         console.log( error );
@@ -53,4 +59,4 @@ async function validate_policy( event ) {
         });
     }
     return response;
-};
+}
