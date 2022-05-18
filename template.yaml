@@ -413,6 +413,8 @@ Resources:
             RestApiId: !Ref ZindeyAPIRest
             Path: /role/{startKey}
             Method: GET
+            Auth:
+               Authorizer: CognitoAuthorizer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RoleTable
@@ -438,6 +440,8 @@ Resources:
                 Model: RoleModel
                 Required: true
                 ValidateBody: true
+            Auth:
+               Authorizer: CognitoAuthorizer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RoleTable
@@ -468,6 +472,8 @@ Resources:
             RestApiId: !Ref ZindeyAPIRest
             Path: /role
             Method: PUT
+            Auth:
+               Authorizer: CognitoAuthorizer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RoleTable
@@ -482,6 +488,7 @@ Resources:
             Resource: '*'
   
   ValidateRoleFunction:
+
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/role/
@@ -497,11 +504,14 @@ Resources:
             RestApiId: !Ref ZindeyAPIRest
             Path: /role/validate
             Method: POST
+            Auth:
+               Authorizer: CognitoAuthorizer
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref RoleTable
 
 #------- Policy Functions-------
+
   GetPoliciesFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -861,7 +871,7 @@ Resources:
           RequireNumbers: true
           RequireSymbols: true
           RequireUppercase: true
-      UsernameAttributes:
+      AutoVerifiedAttributes:
         - email
       Schema:
         - AttributeDataType: String
@@ -981,22 +991,25 @@ Resources:
                     type: array
                     items:
                       type: object
+                      required:
+                        - name
+                        - actions
                       properties:
                         name: 
                           type: string
                         actions:
                           type: array
                           items:
-                            type: string
-  #------------ Validation Models -------------
-  # RoleModel:
-  #   Type: AWS::ApiGateway::Model
-  #   Properties: 
-  #     ContentType: application/json
-  #     Description: Validation Model to Role functions
-  #     Name: RoleModel
-  #     RestApiId: !Ref ZindeyAPIRest
-  #     Schema: 
+                            type: object
+                            required:
+                            - name
+                            - value
+                            properties:
+                              name:
+                                type: string
+                              value:
+                                type: string
+
 
   #------------ API Configure -------------
   ApiAccountConfig:
