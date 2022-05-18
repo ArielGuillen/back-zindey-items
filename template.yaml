@@ -240,12 +240,33 @@ Resources:
             TableName: !Ref BusinessLineTable
 
 #---------- Item Functions ---------
+  GetItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: zindey-suite-get-item
+      CodeUri: src/item/
+      Handler: get_one.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTableName
+      Events:
+        GetItemEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/{id}
+            Method: GET
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTable
   GetItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: zindey-suite-get-items
+      FunctionName: zindey-suite-get-all-items
       CodeUri: src/item/
-      Handler: get_items.lambdaHandler
+      Handler: get_all.lambdaHandler
       Environment:
         Variables:
           TABLE_NAME: !Ref ItemTableName
@@ -261,13 +282,12 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
-
   CreateItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: zindey-suite-create-items
+      FunctionName: zindey-suite-create-item
       CodeUri: src/item/
-      Handler: create_item.lambdaHandler
+      Handler: create_one.lambdaHandler
       Environment:
         Variables:
           TABLE_NAME: !Ref ItemTableName
@@ -287,13 +307,37 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
-
+  CreateManyItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: zindey-suite-create-many-items
+      CodeUri: src/item/
+      Handler: create_many.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTableName
+      Events:
+        CreateManyItemsEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/many
+            Method: POST
+            Auth:
+               Authorizer: CognitoAuthorizer
+            RequestModel:
+              Model: ItemModel
+              Required: true
+              ValidateBody: true
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTable
   UpdateItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      FunctionName: zindey-suite-update-items
+      FunctionName: zindey-suite-update-item
       CodeUri: src/item/
-      Handler: update_item.lambdaHandler
+      Handler: update_one.lambdaHandler
       Environment:
         Variables:
           TABLE_NAME: !Ref ItemTableName
@@ -305,11 +349,28 @@ Resources:
             Path: /item/{id}
             Method: PUT
             Auth:
+              Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTable
+  DeleteItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: zindey-suite-delete-item
+      CodeUri: src/item/
+      Handler: delete_one.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTableName
+      Events:
+        UpdateItemEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/{id}
+            Method: DELETE
+            Auth:
                Authorizer: CognitoAuthorizer
-            RequestModel:
-              Model: ItemModel
-              Required: true
-              ValidateBody: true
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
