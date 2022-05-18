@@ -12,13 +12,13 @@ exports.lambdaHandler = async ( event ) => {
   //Get the id from the url params
   const { id } = event?.pathParameters
   //Transform the JSON string of body value to a javascript object
-  const price = JSON.parse(event.body?.price)
+  const req = JSON.parse(event.body)
   const params = {
     TableName,
     Key: { id },
     UpdateExpression: "set price = :price",
     ExpressionAttributeValues:{
-        ":price":price
+        ":price":req.price
     },
     ReturnValues:"UPDATED_NEW"
   }
@@ -27,7 +27,7 @@ exports.lambdaHandler = async ( event ) => {
     response.body = JSON.stringify({
         message: 'Item updated successfully',
         item: result,
-    });
+    })
   } catch( error ){
     console.log( error );
     response.statusCode = 500;
