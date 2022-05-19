@@ -17,8 +17,11 @@ async function get_policies(  event ){
     };
 
     try{
-        //Get the start key from the url params
-        let startKey = event.pathParameters.startKey;
+
+        //Get the start key from the query params
+        const querystring = event.queryStringParameters;
+        const startKey = querystring.startKey;
+        const limit = querystring.limit;
         
         //Create the object with the Dynamo params
         const policies = await dynamo.scan({
@@ -26,7 +29,7 @@ async function get_policies(  event ){
             ExclusiveStartKey: {
                 "id": startKey     
             },
-            Limit: 10
+            Limit: limit
         }).promise();
 
         let lastEvaluatedKey = "";

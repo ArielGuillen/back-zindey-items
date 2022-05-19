@@ -6,16 +6,21 @@ const TABLE_NAME = process.env.TABLE_NAME;
 const BUCKET_NAME = process.env.BUCKET_NAME;
 
 exports.lambdaHandler = async( event ) => {
+    const response  = await update_business( event );
+    return response;
+};
+
+async function update_business( event ){
 
     const response = {
         statusCode: 200,
-        body: JSON.stringify({ message: "Business updated successfully" }),
+        body: JSON.stringify({ message: "Update Business" }),
     };
     
     try{
-
-        //Get the id from the url params
-        const id = event.pathParameters.id;
+        //Get the BusinessLine id from the query params
+        const querystring = event.queryStringParameters;
+        const id = querystring.id;
 
         let {
             accountId,
@@ -56,7 +61,16 @@ exports.lambdaHandler = async( event ) => {
         }
         await dynamo.put( dynamoParams ).promise();
         
-        response.body= JSON.stringify( { message: "Business updated successfully"});
+        response.body= JSON.stringify( { 
+            message: "Business updated successfully",
+            id,
+            accountId,
+            name,
+            businessLineId,
+            logo,
+            branches,
+            warehouses
+        });
 
     }catch( error ){
         console.log( error );

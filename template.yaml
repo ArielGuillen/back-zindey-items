@@ -411,7 +411,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /role/{startKey}
+            Path: /role
             Method: GET
             Auth:
                Authorizer: CognitoAuthorizer
@@ -488,7 +488,6 @@ Resources:
             Resource: '*'
   
   ValidateRoleFunction:
-
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/role/
@@ -526,7 +525,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /policy/{startKey}
+            Path: /policy
             Method: GET
       Policies:
         - DynamoDBCrudPolicy:

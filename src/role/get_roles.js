@@ -18,8 +18,10 @@ async function get_roles( event ){
     };
 
     try{
-        //Get the key to start the scan from the url params
-        const startKey = event.pathParameters.startKey;
+        //Get the start key from the query params
+        const querystring = event.queryStringParameters;
+        const startKey = querystring.startKey;
+        const limit = querystring.limit;
 
         //Create the object with the Dynamo params
         const params = {
@@ -27,7 +29,7 @@ async function get_roles( event ){
             ExclusiveStartKey: {
                 "id": startKey     
             },
-            Limit: 10
+            Limit: limit
         };
          
         const roles = await dynamo.scan(params).promise();

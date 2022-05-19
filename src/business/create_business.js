@@ -1,26 +1,26 @@
 const AWS = require('aws-sdk');
 const dynamo = new AWS.DynamoDB.DocumentClient();
-const lambda = new AWS.Lambda();
 const s3 = new AWS.S3();
 
 const uuid = require('uuid');
-const jimp = require('jimp');
 
-const UPDATE_ACCOUNT_LAMBDA = process.env.UPDATE_ACCOUNT_LAMBDA;
 const BUSINESS_TABLE_NAME = process.env.BUSINESS_TABLE_NAME;
-const ACCOUNT_TABLE_NAME = process.env.ACCOUNT_TABLE_NAME;
 const BUCKET_NAME = process.env.BUCKET_NAME;
-const JIMP_QUALITY = 70;
+
+const compress_image = require('./compress_image.js');
 
 exports.lambdaHandler = async( event ) => {
+    const response  = await create_business( event );
+    return response;
+};
+
+async function create_business( event ){
 
     const response = {
-        isBase64Encoded: false,
         statusCode: 200,
-        body: JSON.stringify({ message: "Business created successfully" }),
+        body: JSON.stringify({ message: "Create Business" }),
     };
 
-    
     try{
         let {
             accountId,
@@ -62,7 +62,16 @@ exports.lambdaHandler = async( event ) => {
         }
         await dynamo.put( dynamoParams ).promise();
 
-        response.body= JSON.stringify( { message: "Business created successfully"});
+        response.body= JSON.stringify( { 
+            message: "Business created successfully",
+            id,
+            accountId,
+            name,
+            businessLineId,
+            logo: logoUrl,
+            branches,
+            warehouses
+        });
 
     }catch( error ){
         console.log( error );
@@ -74,23 +83,4 @@ exports.lambdaHandler = async( event ) => {
     }
 
     return response;
-}
-
-async function compress_image( imageBase64 ) {
-
-    //Get the image and decode from base64
-    const decodedImage = Buffer.from( imageBase64.replace( /^data:image\/\w+;base64,/, "" ), "base64" );
-
-    //Convert to a jimp type for resize the image
-    const jimpImage = await jimp.read( decodedImage );
-
-    //Get the mime type for upload file to s3
-    const mime = jimpImage.getMIME();
-
-    //Resize the image using the jimpImage and get a buffer for the s3 upload
-    const resizedImage = await jimpImage
-        .quality( JIMP_QUALITY )
-        .getBufferAsync( mime );
-
-    return resizedImage;
 }
