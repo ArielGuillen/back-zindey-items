@@ -51,7 +51,7 @@ Globals:
       Architectures:
         - x86_64
       Layers:
-        - arn:aws:lambda:us-east-1:916649391203:layer:zindey-backend-dev:1
+        - arn:aws:lambda:us-east-1:213198851588:layer:zindey-devs:1
 
 Resources:
 
@@ -1064,7 +1064,7 @@ Resources:
   CognitoUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties: 
-      Domain: zindey-dev-ariel
+      Domain: zindey-suite-dev
       UserPoolId: !Ref CognitoUserPool
 
   CognitoUserPoolClient:
@@ -1186,42 +1186,35 @@ Resources:
           type: object
           required:
             - name
-            - contact
             - address
           properties:
             name:
               type: string
               minLength: 10
-            contact:
-              type: object
-              required:
-                - phone
-              properties:
-                phone:
-                  type: string
             address:
               type: object
               required:
                 - street
-                - number
+                - outdoorNumber
                 - neighborhood
-                - city
+                - town
                 - state
                 - zipCode
               properties:
                 street:
                   type: string
-                number:
+                outdoorNumber:
+                  type: string
+                interiorNumber:
                   type: string
                 neighborhood:
                   type: string
-                city:
+                town:
                   type: string
                 state:
                   type: string
                 zipCode:
                   type: number
-                  minLength: 5
 
   #------------ API Configure -------------
   ApiAccountConfig:

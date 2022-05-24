@@ -22,8 +22,7 @@ async function update_branch( event ){
         const id = querystring.id;
 
         let { 
-            name, 
-            contact,
+            name,
             address
         } = JSON.parse ( event.body );
 
@@ -33,7 +32,6 @@ async function update_branch( event ){
             Item: {
                 id,
                 name,
-                contact,
                 address
             }
         };
@@ -43,7 +41,6 @@ async function update_branch( event ){
             message: `Branch -${name}- updated successfully`,
             id,
             name,
-            contact,
             address
         });
 

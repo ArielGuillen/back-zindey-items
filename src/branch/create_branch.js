@@ -20,7 +20,6 @@ async function create_branch( event ){
 
         let { 
             name,
-            contact,
             address 
         } = JSON.parse ( event.body );
         const id = uuid.v4();
@@ -30,7 +29,6 @@ async function create_branch( event ){
             Item: {
                 id,
                 name,
-                contact,
                 address
             }
         };
@@ -40,7 +38,6 @@ async function create_branch( event ){
             message: "Branch created successfully",
             id,
             name,
-            contact,
             address 
         });
 
