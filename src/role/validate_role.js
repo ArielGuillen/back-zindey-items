@@ -34,7 +34,6 @@ async function Validate_role( event ){
         };
         
         const result = await dynamo.query(params).promise();
-        response.body = JSON.stringify({ message: "Role list", result });
 
         // Check if the result contain a value the name is repeat
         if( result.Count == 0 )

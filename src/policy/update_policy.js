@@ -20,7 +20,7 @@ async function update_policy( event ){
     
     try{
         
-        //Get the BusinessLine id from the query params
+        //Get the policy id from the query params
         const querystring = event.queryStringParameters;
         const id = querystring.id;
 

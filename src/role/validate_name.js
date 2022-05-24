@@ -1,5 +1,4 @@
 const AWS = require('aws-sdk');
-const dynamo = new AWS.DynamoDB.DocumentClient();
 var lambda = new AWS.Lambda();
 
  module.exports = async function( LAMBDA_NAME, name ){

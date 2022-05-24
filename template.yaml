@@ -8,6 +8,9 @@ Parameters:
   AccountTableName: 
     Type: String
     Default: zindey-suite-account-table
+  BranchTableName: 
+    Type: String
+    Default: zindey-suite-brach-table
   BusinessTableName: 
     Type: String
     Default: zindey-suite-business-table
@@ -29,9 +32,12 @@ Parameters:
   WarehouseTableName: 
     Type: String
     Default: zindey-suite-warehouse-table
-  S3BucketName: 
+  ImagesS3BucketName: 
     Type: String
-    Default: zindey-suite-business-bucket-dev
+    Default: zindey-suite-business-bucket-052322
+  ItemsS3BucketName:
+    Type: String
+    Default: zindey-suite-items-bucket-052322
   UserPoolName: 
     Type: String
     Default: zindey-suite-users
@@ -45,7 +51,7 @@ Globals:
       Architectures:
         - x86_64
       Layers:
-        - arn:aws:lambda:us-east-1:213198851588:layer:zindey-devs:1
+        - arn:aws:lambda:us-east-1:916649391203:layer:zindey-backend-dev:1
 
 Resources:
 
@@ -94,6 +100,75 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName:  !Ref AccountTable
 
+#-------- Branch Functions --------
+  GetBranchesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/branch/
+      FunctionName: zindey-suite-get-branches
+      Handler: get_branches.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BranchTableName
+      Events:
+        GetBranchesEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /branch
+            Method: GET
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BranchTable
+
+  CreateBranchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/branch/
+      FunctionName: zindey-suite-create-branch
+      Handler: create_branch.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BranchTableName
+      Events:
+        CreateBranchEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /branch
+            Method: POST
+            RequestModel:
+                Model: BranchModel
+                Required: true
+                ValidateBody: true
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BranchTable
+
+  UpdateBranchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/branch/
+      FunctionName: zindey-suite-update-branch
+      Handler: update_branch.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref BranchTableName
+      Events:
+        UpdateBranchEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /branch
+            Method: PUT
+            RequestModel:
+                Model: BranchModel
+                Required: true
+                ValidateBody: true
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref BranchTable
+
 #-------- Business Functions -------
   GetBusinessFunction:
     Type: AWS::Serverless::Function
@@ -127,7 +202,7 @@ Resources:
         Variables:
           BUSINESS_TABLE_NAME:  !Ref BusinessTableName
           ACCOUNT_TABLE_NAME: !Ref AccountTableName
-          BUCKET_NAME:  !Ref S3BucketName
+          BUCKET_NAME:  !Ref ImagesS3BucketName
       Events:
         CreateBusinessEvent:
           Type: Api
@@ -143,7 +218,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref AccountTable
         - S3FullAccessPolicy:
-            BucketName: !Ref S3Bucket
+            BucketName: !Ref ImagesS3Bucket
   
   UpdateBusinessFunction:
     Type: AWS::Serverless::Function
@@ -154,7 +229,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref BusinessTableName
-          BUCKET_NAME:  !Ref S3BucketName
+          BUCKET_NAME:  !Ref ImagesS3BucketName
       Events:
         UpdateBusinessEvent:
           Type: Api
@@ -168,7 +243,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref BusinessTable
         - S3FullAccessPolicy:
-            BucketName: !Ref S3Bucket
+            BucketName: !Ref ImagesS3Bucket
 
 #------ BusinessLine Functions -----
   GetBusinessLinesFunction:
@@ -259,6 +334,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
+  
   GetItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -280,6 +356,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
+  
   CreateItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -305,6 +382,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
+  
   CreateManyItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -330,6 +408,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
+  
   UpdateItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -351,6 +430,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
+  
   DeleteItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -372,6 +452,55 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
+
+  UploadCSVFileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/item/
+      FunctionName: zindey-suite-upload-csv-file
+      Handler: upload_csv.lambdaHandler
+      Environment:
+        Variables:
+          BUCKET_NAME:  !Ref ItemsS3Bucket
+      Events:
+        UploadCSVFileEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/uploadcsv
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref ItemsS3Bucket
+
+  UploadItemsFromCSV:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/item/
+      FunctionName: zindey-suite-upload-items-from-csv-file
+      Handler: upload_items_from_csv.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTable
+      Events:
+        s3ObjectCreated:
+          Type: S3
+          Properties:
+            Bucket: !Ref ItemsS3Bucket
+            Events: 
+              - s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                - Name: suffix
+                  Value: .csv
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTableName
+        - S3ReadPolicy:
+            BucketName: zindey-suite-items-bucket-052322
 
 #-------- Payment Functions --------
   GetPaymentPlansFunction:
@@ -706,6 +835,20 @@ Resources:
             ReadCapacityUnits: 5
             WriteCapacityUnits: 5
   
+  BranchTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref BranchTableName
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
   BusinessTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -828,11 +971,11 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
         
-#------------ S3 Bucket ------------
-  S3Bucket:
+#------------ S3 Buckets ------------
+  ImagesS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref S3BucketName
+      BucketName: !Ref ImagesS3BucketName
       PublicAccessBlockConfiguration:
         BlockPublicAcls: false
         BlockPublicPolicy: false
@@ -842,7 +985,7 @@ Resources:
   ImagesBucketPolicy:
     Type: AWS::S3::BucketPolicy
     Properties:
-      Bucket: !Ref S3Bucket
+      Bucket: !Ref ImagesS3Bucket
       PolicyDocument:
         Id: BucketPolicy
         Version: 2012-10-17
@@ -854,8 +997,37 @@ Resources:
             Sid: "s3BucketPolicy"
             Effect: Allow
             Principal: '*'
-            Resource: !Sub arn:aws:s3:::${S3Bucket}
-            Resource: !Sub arn:aws:s3:::${S3Bucket}/*
+            Resource: !Sub arn:aws:s3:::${ImagesS3Bucket}
+            Resource: !Sub arn:aws:s3:::${ImagesS3Bucket}/*
+
+  ItemsS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: zindey-suite-items-bucket-052322
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: false
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  ItemsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ItemsS3Bucket
+      PolicyDocument:
+        Id: ItemsBucketPolicy
+        Version: 2012-10-17
+        Statement:
+          - Action: 
+              - 's3:GetObject'
+              - 's3:PutObject'
+              - 's3:DeleteObject'
+            Sid: "ItemsS3BucketPolicy"
+            Effect: Allow
+            Principal: '*'
+            Resource: !Sub arn:aws:s3:::${ItemsS3Bucket}
+            Resource: !Sub arn:aws:s3:::${ItemsS3Bucket}/*
+  
 
 #-------- Cognito Userpool ---------
 
@@ -892,7 +1064,7 @@ Resources:
   CognitoUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties: 
-      Domain: zindey-suite-dev
+      Domain: zindey-dev-ariel
       UserPoolId: !Ref CognitoUserPool
 
   CognitoUserPoolClient:
@@ -1008,7 +1180,48 @@ Resources:
                                 type: string
                               value:
                                 type: string
-
+        BranchModel:
+          $schema: 'http://json-schema.org/draft-04/schema#'
+          title: RoleModel
+          type: object
+          required:
+            - name
+            - contact
+            - address
+          properties:
+            name:
+              type: string
+              minLength: 10
+            contact:
+              type: object
+              required:
+                - phone
+              properties:
+                phone:
+                  type: string
+            address:
+              type: object
+              required:
+                - street
+                - number
+                - neighborhood
+                - city
+                - state
+                - zipCode
+              properties:
+                street:
+                  type: string
+                number:
+                  type: string
+                neighborhood:
+                  type: string
+                city:
+                  type: string
+                state:
+                  type: string
+                zipCode:
+                  type: number
+                  minLength: 5
 
   #------------ API Configure -------------
   ApiAccountConfig:
