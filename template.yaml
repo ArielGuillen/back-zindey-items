@@ -291,6 +291,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref ItemTableName
+          LAMBDA_NAME:  !Ref ItemValidationFunction
       Events:
         CreateItemEvent:
           Type: Api
@@ -307,6 +308,15 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ItemValidationFunction
+        - Statement:
+          - Sid: LambdaInvokePolicy
+            Effect: Allow
+            Action:
+            - lambda:InvokeAsync
+            - lambda:InvokeFunction
+            Resource: '*'
   CreateManyItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -341,6 +351,7 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref ItemTableName
+          LAMBDA_NAME:  !Ref ItemValidationFunction
       Events:
         UpdateItemEvent:
           Type: Api
@@ -353,6 +364,15 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ItemValidationFunction
+        - Statement:
+          - Sid: LambdaInvokePolicy
+            Effect: Allow
+            Action:
+            - lambda:InvokeAsync
+            - lambda:InvokeFunction
+            Resource: '*'
   DeleteItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -375,6 +395,25 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
 
+  ItemValidationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/item/
+      FunctionName: zindey-suite-item-validation
+      Handler: item_validation.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTableName
+      Events:
+        ValidateItemEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/validation
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTable
 #-------- Payment Functions --------
   GetPaymentPlansFunction:
     Type: AWS::Serverless::Function
