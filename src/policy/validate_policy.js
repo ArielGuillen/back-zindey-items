@@ -4,21 +4,21 @@ const dynamo = new AWS.DynamoDB.DocumentClient();
 const TABLE_NAME = process.env.TABLE_NAME;
 
 exports.lambdaHandler = async ( event ) => {
-    const response  = await Validate_role( event );
+    const response  = await validate_policy( event );
     return response;
 };
 
-async function Validate_role( event ){
+async function validate_policy( event ) {
 
     //Create the response object
-    const response = {
+    let response = {
         statusCode: 200,
-        body: JSON.stringify( { message: "Validate Role name"} )
+        body: JSON.stringify( { message: "Validate policy name"} )
     };
 
     try{
 
-        //Get the role name from the body request 
+        //Get the policy name from the body request 
         const name = event.name;
         //Create the object with the DynamoDB params
         const params = {
@@ -34,19 +34,18 @@ async function Validate_role( event ){
         };
         
         const result = await dynamo.query(params).promise();
-        response.body = JSON.stringify({ message: "Role list", result });
 
-        // Check if the result contain a value the name is repeat
+        // Check if the result contain a value, the name is repeat
         if( result.Count == 0 )
-            response.body = JSON.stringify({
+            response.body = JSON.stringify({ 
                 status: true,
-                message: `Role ${name} available`
+                message: `Policy name ${name} available`,
             });
-        else{            
+        else{
             response.statusCode = 403;
             response.body = JSON.stringify({ 
                 status: false,
-                message: `Role ${name} already exist`, 
+                message: `Policy ${name} already exist`, 
                 id: result.Items[0].id
             });
         }
@@ -55,11 +54,9 @@ async function Validate_role( event ){
         response.statusCode = 500;
         response.body = JSON.stringify({ 
             status: false,
-            message: "Failed to validate role", 
+            message: "Failed to validate Policy",
             error: error.message 
         });
     }
-
     return response;
-
 }

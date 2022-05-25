@@ -4,6 +4,12 @@ const dynamo = new AWS.DynamoDB.DocumentClient();
 const TABLE_NAME = process.env.TABLE_NAME;
 
 exports.lambdaHandler = async (event) => {
+    const response  = await get_roles( event );
+    return response;
+}
+
+
+async function get_roles( event ){
 
     //create the response object
     const response = {
@@ -21,14 +27,20 @@ exports.lambdaHandler = async (event) => {
             ExclusiveStartKey: {
                 "id": startKey     
             },
-            Limit: 5
+            Limit: 10
         };
          
-        const data = await dynamo.scan(params).promise();
+        const roles = await dynamo.scan(params).promise();
+        
+        let lastEvaluatedKey = "";
+        if( roles.LastEvaluatedKey != null )
+            lastEvaluatedKey = policies.LastEvaluatedKey;
+
         response.body = JSON.stringify({ 
-            message: "Get Role List Successfully", 
-            lastEvaluatedKey: data.LastEvaluatedKey,
-            items: data.Items
+            message: "Get Role List Successfully",
+            count: roles.Count,
+            lastEvaluatedKey,
+            items: roles.Items
         });
 
     }catch( error ){
