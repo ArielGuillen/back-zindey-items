@@ -3,10 +3,15 @@ const dynamo = new AWS.DynamoDB.DocumentClient();
 
 const TABLE_NAME = process.env.TABLE_NAME;
 
-exports.lambdaHandler =  async ( event ) => {
-    
+exports.lambdaHandler = async( event ) => {
+    const response  = await get_businessLines( event );
+    return response;
+};
+
+async function get_businessLines ( event ){
     const response = {
         isBase64Encoded: false,
+        headers: { 'Content-Type': 'application/json;charset=UTF-8' },
         statusCode: 200,
         body: JSON.stringify({ message: "" }),
     };

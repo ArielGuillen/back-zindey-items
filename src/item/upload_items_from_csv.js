@@ -28,17 +28,14 @@ async function upload_from_csv( event ){
 
         const s3Data = await s3Client.getObject( s3Params ).promise();
         const s3Object = s3Data.Body;
-        const json = await csv().fromString( s3Object.toString() );
-        console.log( json ); 
+        const json = await csv().fromString( s3Object.toString() ); 
         for( let i = 0; i < json.length ; i++ ){
             //create each row into DynamoDB
             let itemParams = {
                 TableName: TABLE_NAME,
                 Item:{
                     id: uuid.v4(),
-                    username: json[i].username,
-                    password: json[i].password,
-                    link: json[i].consoleLoginLink
+                    ...json[i]
                 }
             };
             try{

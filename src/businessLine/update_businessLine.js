@@ -1,14 +1,19 @@
-const AWS = require('aws-sdk');
+const AWS = require("aws-sdk");
 const dynamo = new AWS.DynamoDB.DocumentClient();
 
 const TABLE_NAME = process.env.TABLE_NAME;
 
 exports.lambdaHandler = async( event ) => {
+    const response  = await update_businessLine( event );
+    return response;
+};
+
+async function update_businessLine ( event ){
 
     const response = {
         isBase64Encoded: false,
         statusCode: 200,
-        body: JSON.stringify({ message: "Business line updated successfully" }),
+        body: JSON.stringify({ message: "Update Business line" })
     };
         
     try{
@@ -26,7 +31,11 @@ exports.lambdaHandler = async( event ) => {
         };
 
         await dynamo.put ( params ).promise();
-        response.body= JSON.stringify({ message: "Business line updated successfully" });
+        response.body= JSON.stringify({ 
+            message: "Business line updated successfully",
+            id,
+            name 
+        });
         
     }catch( error ){
         console.log( error );
