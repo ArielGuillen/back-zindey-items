@@ -20,6 +20,9 @@ Parameters:
   ItemTableName: 
     Type: String
     Default: zindey-suite-item-table
+  ItemTypeElementTableName:
+    Type: String
+    Default: zindey-suite-item-type-element-table
   PaymentTableName: 
     Type: String
     Default: zindey-suite-payment-table
@@ -41,6 +44,9 @@ Parameters:
   UserPoolName: 
     Type: String
     Default: zindey-suite-users
+  CognitoDomain: 
+    Type: String
+    Default: zindey-suite-dev
 
 Globals:
   Function:
@@ -539,6 +545,97 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
+            
+#--- Item Type Elements Functions ----
+  
+  GetItemTypesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/itemTypeElement/
+      FunctionName: zindey-suite-get-item-types
+      Handler: get_itemTypes.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTypeElementTableName
+      Events:
+        GetItemTypesEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/types
+            Method: GET
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTypeElementTable
+
+  GetItemTypeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/itemTypeElement/
+      FunctionName: zindey-suite-get-item-types-by-type
+      Handler: get_itemType.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTypeElementTableName
+      Events:
+        GetItemTypeEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/types/{type}
+            Method: GET
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTypeElementTable
+            
+  CreateItemTypeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/itemTypeElement/
+      FunctionName: zindey-suite-create-item-type
+      Handler: create_itemType.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTypeElementTableName
+      Events:
+        CreateItemTypeEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/types
+            Method: POST
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTypeElementTable
+
+  UpdateItemTypeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/itemTypeElement/
+      FunctionName: zindey-suite-update-item-type
+      Handler: update_itemType.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTypeElementTableName
+      Events:
+        UpdateItemTypeEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/types
+            Method: PUT
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTypeElementTable
+
 #-------- Payment Functions --------
   GetPaymentPlansFunction:
     Type: AWS::Serverless::Function
@@ -562,7 +659,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName:  !Ref PaymentPlanTable
 
-#-------Role Functions-------
+#---------- Role Functions ----------
   GetRolesFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -928,6 +1025,20 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
+  ItemTypeElementTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref ItemTypeElementTableName
+      AttributeDefinitions:
+        - AttributeName: type
+          AttributeType: S
+      KeySchema:
+        - AttributeName: type
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
   PaymentPlanTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -1101,7 +1212,7 @@ Resources:
   CognitoUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties: 
-      Domain: zindey-suite-dev
+      Domain: !Ref CognitoDomain
       UserPoolId: !Ref CognitoUserPool
 
   CognitoUserPoolClient:
@@ -1252,7 +1363,45 @@ Resources:
                   type: string
                 zipCode:
                   type: number
-
+        BusinessModel:
+          $schema:  http://json-schema.org/draft-04/schema#
+          title: BusinessModel
+          type: object
+          required:
+            - accountId
+            - name
+            - businessLineId
+            - logo
+          properties:
+            accountId:
+              type: string
+            name:
+              type: string
+            businessLineId:
+              type: string
+            logo:
+              type: string
+            warehouses:
+              type: array
+              items:
+                type: object
+                required:
+                  - name
+                  - location
+                  - items
+                properties:
+                  name:
+                    type: string
+                  location:
+                    type: string
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - name
+                      properties:
+                        name:
   #------------ API Configure -------------
   ApiAccountConfig:
     Type: "AWS::ApiGateway::Account"
@@ -1275,6 +1424,6 @@ Resources:
         - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
 
 Outputs:
-  HelloWorldApi:
+  ZindeyApi:
     Description: "API Gateway endpoint URL for dev stage"
     Value: !Sub 'https://${ZindeyAPIRest}.execute-api.${AWS::Region}.amazonaws.com/dev'

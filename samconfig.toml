@@ -2,9 +2,9 @@ version = 0.1
 [default]
 [default.deploy]
 [default.deploy.parameters]
-stack_name = "zindey-suite-052322"
-s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1s7u31fu0un69"
-s3_prefix = "zindey-suite-052322"
+stack_name = "zindey-suite-051222"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-k6uopu3b3yob"
+s3_prefix = "zindey-suite-051222"
 region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
