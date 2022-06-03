@@ -7,7 +7,8 @@ exports.lambdaHandler =  async ( event ) => {
   const response = {
     isBase64Encoded: false,
     statusCode: 200,
-    body: JSON.stringify({ message: "GET Items list" })
+    body: JSON.stringify({ message: "GET item list." }),
+    headers: { 'Content-Type': 'application/json;charset=UTF-8' }
   }
   const params = {
     TableName,
@@ -23,7 +24,7 @@ exports.lambdaHandler =  async ( event ) => {
     console.log( error )
     response.statusCode = 500
     response.body = JSON.stringify( {
-        message: "Failed to get item list",
+        message: "Failed to get item list.",
         error: error.message
     })
   }

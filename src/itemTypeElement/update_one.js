@@ -11,8 +11,8 @@ exports.lambdaHandler = async ( event ) => {
   const response = {
     statusCode: 200,
     isBase64Encoded: false,
-    body: JSON.stringify({ message: "Update item." }),
-    headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+    headers: { 'Content-Type': 'application/json;charset=UTF-8' },
+    body: JSON.stringify({ message: "Update item type element." })
   }
   //Get the id from the url params
   const { id } = event?.pathParameters
@@ -25,7 +25,7 @@ exports.lambdaHandler = async ( event ) => {
     } catch (error) {
       response.statusCode = 500
       response.body = JSON.stringify({
-        message: "Failed to validate item.",
+        message: "Failed to validate item type element.",
         error: error.message
       })
     }
@@ -42,22 +42,22 @@ exports.lambdaHandler = async ( event ) => {
     try {
       await db.update(params).promise()
       response.body = JSON.stringify({
-        message: "Item updated successfully.",
+        message: "Item type element updated successfully.",
         item: req,
       })
     } catch (error) {
       console.error(error)
       response.statusCode = 500
       response.body = JSON.stringify({
-        message: "Failed to update item.",
+        message: "Failed to update item type element.",
         error: error.message
       })
     }
   } else {
     response.statusCode = 403
     response.body = JSON.stringify({
-      message: "Failed to update item.",
-      error: `Item "${req?.name}" already exists.`,
+      message: "Failed to update item type element.",
+      error: `Item type element "${req?.name}" already exists.`,
     })
   }
   return response

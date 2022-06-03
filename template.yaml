@@ -20,6 +20,9 @@ Parameters:
   ItemTableName: 
     Type: String
     Default: zindey-suite-item-table
+  ItemPriceTableName:
+    Type: String
+    Default: zindey-suite-item-price-table
   ItemTypeElementTableName:
     Type: String
     Default: zindey-suite-item-type-element-table
@@ -340,8 +343,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
-  
-  GetItemsFunction:
+  GetAllItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: zindey-suite-get-all-items
@@ -362,7 +364,6 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
-  
   CreateItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -383,7 +384,7 @@ Resources:
             Auth:
                Authorizer: CognitoAuthorizer
             RequestModel:
-              Model: ItemModel
+              Model: ItemModelCreate
               Required: true
               ValidateBody: true
       Policies:
@@ -417,13 +418,59 @@ Resources:
             Auth:
                Authorizer: CognitoAuthorizer
             RequestModel:
-              Model: ItemModel
-              Required: true
-              ValidateBody: true
+              Model: ItemModelCreate
+              Required: false
+              ValidateBody: false
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
-  
+  UploadCSVFileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/item/
+      FunctionName: zindey-suite-upload-csv-file
+      Handler: upload_csv.lambdaHandler
+      Environment:
+        Variables:
+          BUCKET_NAME:  !Ref ItemsS3Bucket
+      Events:
+        UploadCSVFileEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/uploadcsv
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref ItemsS3Bucket
+  UploadItemsFromCSV:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/item/
+      FunctionName: zindey-suite-upload-items-from-csv-file
+      Handler: upload_items_from_csv.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTable
+      Events:
+        s3ObjectCreated:
+          Type: S3
+          Properties:
+            Bucket: !Ref ItemsS3Bucket
+            Events:
+              - s3:ObjectCreated:*
+            Filter:
+              S3Key:
+                Rules:
+                - Name: suffix
+                  Value: .csv
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTableName
+        - S3ReadPolicy:
+            BucketName: zindey-suite-items-bucket-052322
   UpdateItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -443,6 +490,10 @@ Resources:
             Method: PUT
             Auth:
               Authorizer: CognitoAuthorizer
+            RequestModel:
+              Model: ItemModelUpdate
+              Required: true
+              ValidateBody: true
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
@@ -476,56 +527,6 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
-
-  UploadCSVFileFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/item/
-      FunctionName: zindey-suite-upload-csv-file
-      Handler: upload_csv.lambdaHandler
-      Environment:
-        Variables:
-          BUCKET_NAME:  !Ref ItemsS3Bucket
-      Events:
-        UploadCSVFileEvent:
-          Type: Api
-          Properties:
-            RestApiId: !Ref ZindeyAPIRest
-            Path: /item/uploadcsv
-            Method: POST
-            Auth:
-              Authorizer: CognitoAuthorizer
-      Policies:
-        - S3WritePolicy:
-            BucketName: !Ref ItemsS3Bucket
-
-  UploadItemsFromCSV:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/item/
-      FunctionName: zindey-suite-upload-items-from-csv-file
-      Handler: upload_items_from_csv.lambdaHandler
-      Environment:
-        Variables:
-          TABLE_NAME: !Ref ItemTable
-      Events:
-        s3ObjectCreated:
-          Type: S3
-          Properties:
-            Bucket: !Ref ItemsS3Bucket
-            Events: 
-              - s3:ObjectCreated:*
-            Filter:
-              S3Key:
-                Rules:
-                - Name: suffix
-                  Value: .csv
-      Policies:
-        - DynamoDBCrudPolicy:
-            TableName: !Ref ItemTableName
-        - S3ReadPolicy:
-            BucketName: zindey-suite-items-bucket-052322
-
   ItemValidationFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -545,20 +546,19 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
-            
+
 #--- Item Type Elements Functions ----
-  
-  GetItemTypesFunction:
+  GetAllItemTypesFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/itemTypeElement/
-      FunctionName: zindey-suite-get-item-types
-      Handler: get_itemTypes.lambdaHandler
+      FunctionName: zindey-suite-get-all-item-types
+      Handler: get_all.lambdaHandler
       Environment:
         Variables:
           TABLE_NAME: !Ref ItemTypeElementTableName
       Events:
-        GetItemTypesEvent:
+        GetAllItemTypesEvent:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
@@ -569,18 +569,17 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTypeElementTable
-
-  GetItemTypeFunction:
+  GetAllFromOneItemTypeFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/itemTypeElement/
-      FunctionName: zindey-suite-get-item-types-by-type
-      Handler: get_itemType.lambdaHandler
+      FunctionName: zindey-suite-get-all-from-one-item-type
+      Handler: get_all_from_one_type.lambdaHandler
       Environment:
         Variables:
           TABLE_NAME: !Ref ItemTypeElementTableName
       Events:
-        GetItemTypeEvent:
+        GetAllFromOneItemTypeEvent:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
@@ -591,13 +590,33 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTypeElementTable
-            
+  GetOneItemTypeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/itemTypeElement/
+      FunctionName: zindey-suite-get-one-item-type
+      Handler: get_one.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTypeElementTableName
+      Events:
+        GetOneItemTypeEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/types/{id}
+            Method: GET
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTypeElementTable
   CreateItemTypeFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/itemTypeElement/
       FunctionName: zindey-suite-create-item-type
-      Handler: create_itemType.lambdaHandler
+      Handler: create_one.lambdaHandler
       Environment:
         Variables:
           TABLE_NAME: !Ref ItemTypeElementTableName
@@ -613,13 +632,21 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTypeElementTable
-
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ItemValidationFunction
+        - Statement:
+          - Sid: LambdaInvokePolicy
+            Effect: Allow
+            Action:
+            - lambda:InvokeAsync
+            - lambda:InvokeFunction
+            Resource: '*'
   UpdateItemTypeFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/itemTypeElement/
       FunctionName: zindey-suite-update-item-type
-      Handler: update_itemType.lambdaHandler
+      Handler: update_one.lambdaHandler
       Environment:
         Variables:
           TABLE_NAME: !Ref ItemTypeElementTableName
@@ -635,6 +662,162 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTypeElementTable
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ItemValidationFunction
+        - Statement:
+          - Sid: LambdaInvokePolicy
+            Effect: Allow
+            Action:
+            - lambda:InvokeAsync
+            - lambda:InvokeFunction
+            Resource: '*'
+  DeleteItemTypeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/itemTypeElement/
+      FunctionName: zindey-suite-delete-item-type
+      Handler: delete_one.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTypeElementTableName
+      Events:
+        DeleteItemTypeEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/types
+            Method: DELETE
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTypeElementTable
+  ItemTypeValidationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/item/
+      FunctionName: zindey-suite-item-type-validation
+      Handler: item_type_validation.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemTypeElementTableName
+      Events:
+        ValidateItemTypeEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/types/validation
+            Method: POST
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemTypeElementTable
+
+#------- Item Price Functions -------
+  GetOneItemPriceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/itemPrice/
+      FunctionName: zindey-suite-get-one-item-price
+      Handler: get_one.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemPriceTableName
+      Events:
+        GetOneItemPriceEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/prices/{id}
+            Method: GET
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemPriceTable
+  GetAllItemsPriceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/itemPrice/
+      FunctionName: zindey-suite-get-all-items-price
+      Handler: get_all.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemPriceTableName
+      Events:
+        GetAllItemsPriceEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/prices
+            Method: GET
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemPriceTable
+  CreateItemPriceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/itemPrice/
+      FunctionName: zindey-suite-create-item-price
+      Handler: create_one.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemPriceTableName
+      Events:
+        CreateItemPriceEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/prices
+            Method: POST
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemPriceTable
+  UpdateItemPriceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/itemPrice/
+      FunctionName: zindey-suite-update-item-price
+      Handler: update_one.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemPriceTableName
+      Events:
+        UpdateItemPriceEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/prices/{id}
+            Method: PUT
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemPriceTable
+  DeleteItemPriceFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/itemPrice/
+      FunctionName: zindey-suite-delete-item-price
+      Handler: delete_one.lambdaHandler
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref ItemPriceTableName
+      Events:
+        DeleteItemPriceEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ZindeyAPIRest
+            Path: /item/prices/{id}
+            Method: DELETE
+            Auth:
+               Authorizer: CognitoAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ItemPriceTable
 
 #-------- Payment Functions --------
   GetPaymentPlansFunction:
@@ -1038,6 +1221,30 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
+      GlobalSecondaryIndexes:
+        - IndexName: GSIFindByName
+          KeySchema:
+            - AttributeName: name
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+
+  ItemPriceTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref ItemPriceTableName
+      AttributeDefinitions:
+        - AttributeName: type
+          AttributeType: S
+      KeySchema:
+        - AttributeName: type
+          KeyType: HASH
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
 
   PaymentPlanTable:
     Type: AWS::DynamoDB::Table
@@ -1264,27 +1471,191 @@ Resources:
           CognitoAuthorizer:
             UserPoolArn: !GetAtt CognitoUserPool.Arn
       Models:
-        ItemModel:
+        ItemModelCreate:
           $schema: 'http://json-schema.org/draft-04/schema#'
-          title: ItemModel
+          title: ItemModelCreate
           type: object
           properties:
             name:
               type: string
-              minLength: 10
+              minLength: 3
+              maxLength: 200
+              pattern: ^[-A-Z0-9./$+# ]+
+            sku:
+              type: string
+              minLength: 4
+              maxLength: 10
+              pattern: ^[-A-Z0-9./$+# ]+
             price:
               type: number
+              minimum: 0
+              exclusiveMinimum: true
+            department:
+              type: string
+              minLength: 4
+              maxLength: 32
+              pattern: ^[-A-Z0-9./$+# ]+
             category:
-              type: object
-              properties:
-                name:
-                  type: string
-                  minLength: 4
-                  maxLength: 32
+              type: string
+              minLength: 4
+              maxLength: 32
+              pattern: ^[-A-Z0-9./$+# ]+
+            tradeMark:
+              type: string
+              minLength: 4
+              maxLength: 50
+              pattern: ^[-A-Z0-9./$+# ]+
+            perishable:
+              type: boolean
           required:
             - name
             - category
             - price
+        ItemModelUpdate:
+          $schema: 'http://json-schema.org/draft-04/schema#'
+          title: ItemModelUpdate
+          type: object
+          properties:
+            name:
+              type: string
+              minLength: 3
+              maxLength: 200
+              pattern: ^[-A-Z0-9./$+# ]+
+            sku:
+              type: string
+              minLength: 4
+              maxLength: 10
+              pattern: ^[-A-Z0-9./$+# ]+
+            price:
+              type: number
+              minimum: 0
+              exclusiveMinimum: true
+            department:
+              type: string
+              minLength: 4
+              maxLength: 32
+              pattern: ^[-A-Z0-9./$+# ]+
+            category:
+              type: string
+              minLength: 4
+              maxLength: 32
+              pattern: ^[-A-Z0-9./$+# ]+
+            tradeMark:
+              type: string
+              minLength: 4
+              maxLength: 50
+              pattern: ^[-A-Z0-9./$+# ]+
+            perishable:
+              type: boolean
+        ItemTypeElementModelCreate:
+          $schema: 'http://json-schema.org/draft-04/schema#'
+          title: ItemTypeElementModelCreate
+          type: object
+          properties:
+            type:
+              type: string
+              pattern: ^[-A-Z0-9./$+# ]+
+            value:
+              type: string
+              minLength: 1
+              maxLength: 50
+              pattern: ^[-A-Z0-9./$+# ]+
+            businessId:
+              type: string
+              pattern: ^[-A-Z0-9./$+# ]+
+          required:
+            - type
+            - value
+            - businessId
+        ItemTypeElementModelUpdate:
+          $schema: 'http://json-schema.org/draft-04/schema#'
+          title: ItemTypeElementModelUpdate
+          type: object
+          properties:
+            type:
+              type: string
+              pattern: ^[-A-Z0-9./$+# ]+
+            value:
+              type: string
+              minLength: 1
+              maxLength: 50
+              pattern: ^[-A-Z0-9./$+# ]+
+            businessId:
+              type: string
+              pattern: ^[-A-Z0-9./$+# ]+
+        ItemPriceModelCreate:
+          $schema: 'http://json-schema.org/draft-04/schema#'
+          title: ItemPriceModelCreate
+          type: object
+          properties:
+            price:
+              type: number
+              minimum: 0
+              exclusiveMinimum: true
+            multiplier:
+              type: number
+              minimum: 0
+              exclusiveMinimum: true
+            isFixed:
+              type: boolean
+            unit:
+              type: string
+              minLength: 1
+              maxLength: 50
+              pattern: ^[-A-Z0-9./$+# ]+
+            warehouseSheetId:
+              type: string
+              pattern: ^[-A-Z0-9./$+# ]+
+            isWholesale:
+              type: boolean
+            isPublished:
+              type: boolean
+            isDefault:
+              type: boolean
+            itemId:
+              type: string
+              pattern: ^[-A-Z0-9./$+# ]+
+          required:
+            - price
+            - isFixed
+            - unit
+            - isWholesale
+            - isPublished
+            - isDefault
+            - itemId
+        ItemPriceModelUpdate:
+          $schema: 'http://json-schema.org/draft-04/schema#'
+          title: ItemPriceModelUpdate
+          type: object
+          properties:
+            price:
+              type: number
+              minimum: 0
+              exclusiveMinimum: true
+            multiplier:
+              type: number
+              minimum: 0
+              exclusiveMinimum: true
+            isFixed:
+              type: boolean
+            unit:
+              type: string
+              minLength: 1
+              maxLength: 50
+              pattern: ^[-A-Z0-9./$+# ]+
+            warehouseSheetId:
+              type: string
+              pattern: ^[-A-Z0-9./$+# ]+
+            isWholesale:
+              type: boolean
+            isPublished:
+              type: boolean
+            isDefault:
+              type: boolean
+            itemId:
+              type: string
+              pattern: ^[-A-Z0-9./$+# ]+
+
         RoleModel:
           $schema: 'http://json-schema.org/draft-04/schema#'
           title: RoleModel

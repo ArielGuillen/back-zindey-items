@@ -8,7 +8,8 @@ exports.lambdaHandler = async ( event ) => {
   const response = {
     isBase64Encoded: false,
     statusCode: 200,
-    body: JSON.stringify({ message: "Create multiple items" })
+    body: JSON.stringify({ message: "Create multiple items." }),
+    headers: { 'Content-Type': 'application/json;charset=UTF-8' }
   }
   //Transform the JSON string of body value to a javascript object
   const req = JSON.parse(event.body)
@@ -23,14 +24,14 @@ exports.lambdaHandler = async ( event ) => {
       await db.put({ TableName, Item: newItem }).promise()
       if(i === req?.items?.length - 1) {
         response.body = JSON.stringify({
-          message: "Items created successfully",
+          message: "Items created successfully.",
         })
       }
     }catch (error) {
       console.error(error)
       response.statusCode = 500
       response.body = JSON.stringify({
-        message: "Failed to upload Item",
+        message: "Failed to upload Item.",
         error: error.message
       })
     }

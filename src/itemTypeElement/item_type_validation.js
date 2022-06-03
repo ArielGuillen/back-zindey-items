@@ -4,17 +4,12 @@ const db = new DynamoDB.DocumentClient()
 const TableName = process.env.TABLE_NAME
 
 exports.lambdaHandler = async ( event ) => {
-  const response  = await itemValidation( event )
-  return response
-}
-
-async function itemValidation( event ){
   let queryResponse = null
   //Create the response object
   const response = {
     statusCode: 200,
-    body: JSON.stringify({ message: "Validate item name."}),
-    headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+    headers: { 'Content-Type': 'application/json;charset=UTF-8' },
+    body: JSON.stringify({ message: "Validate item type element name." })
   }
   //Get the item name from the body request
   const name = event?.name
@@ -32,13 +27,13 @@ async function itemValidation( event ){
   }
   try {
     queryResponse = await db.query(params).promise()
-    response.body = JSON.stringify({ message: "Item list", queryResponse })
+    response.body = JSON.stringify({ message: "Item type element list", queryResponse })
   }catch( error ) {
     console.log( error )
     response.statusCode = 500
     response.body = JSON.stringify({
       status: false,
-      message: "Failed to validate the item name.",
+      message: "Failed to validate the item type element name.",
       error: error.message
     })
   }
@@ -46,13 +41,13 @@ async function itemValidation( event ){
   if( queryResponse?.Count === 0 )
     response.body = JSON.stringify({
       status: true,
-      message: `Item name available.`
+      message: `Item type element name available.`
     })
   else{
     response.statusCode = 403
     response.body = JSON.stringify({
       status: false,
-      message: `Item "${name}" already exist.`,
+      message: `Item type element "${name}" already exist.`,
       id: queryResponse?.Items[0]?.id
     })
   }

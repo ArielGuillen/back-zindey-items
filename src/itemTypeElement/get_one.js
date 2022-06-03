@@ -7,8 +7,8 @@ exports.lambdaHandler = async event => {
   const response = {
     isBase64Encoded: false,
     statusCode: 200,
-    body: JSON.stringify({ message: "GET item by id." }),
-    headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+    headers: { 'Content-Type': 'application/json;charset=UTF-8' },
+    body: JSON.stringify({ message: "GET item type element by id." })
   }
   const { id } = event?.pathParameters
   const params = {
@@ -22,7 +22,7 @@ exports.lambdaHandler = async event => {
     console.log( error )
     response.statusCode = 500
     response.body = JSON.stringify( {
-        message: "Failed to get item.",
+        message: "Failed to get item type element.",
         error: error.message
     })
   }
