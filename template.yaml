@@ -109,7 +109,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName:  !Ref AccountTable
 
-#-------- Branch Functions --------
+#--------- Branch Functions ---------
   GetBranchesFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -178,7 +178,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref BranchTable
 
-#-------- Business Functions -------
+#-------- Business Functions --------
   GetBusinessFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -254,7 +254,7 @@ Resources:
         - S3FullAccessPolicy:
             BucketName: !Ref ImagesS3Bucket
 
-#------ BusinessLine Functions -----
+#------ BusinessLine Functions ------
   GetBusinessLinesFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -321,7 +321,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref BusinessLineTable
 
-#---------- Item Functions ---------
+#---------- Item Functions ----------
   GetItemFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -546,9 +546,10 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
-
-#--- Item Type Elements Functions ----
-  GetAllItemTypesFunction:
+            
+#--- Item Type Elements Functions ---
+  
+  GetItemTypesFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/itemTypeElement/
@@ -819,7 +820,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemPriceTable
 
-#-------- Payment Functions --------
+#-------- Payment Functions ---------
   GetPaymentPlansFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -955,7 +956,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref RoleTable
 
-#------- Policy Functions-------
+#--------- Policy Functions----------
 
   GetPoliciesFunction:
     Type: AWS::Serverless::Function
@@ -1125,7 +1126,8 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref WarehouseTable
 
-#--------- Dynamo DB Tables --------
+
+#---------- Dynamo DB Tables --------
   AccountTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -1325,7 +1327,8 @@ Resources:
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
-        
+
+
 #------------ S3 Buckets ------------
   ImagesS3Bucket:
     Type: AWS::S3::Bucket
@@ -1382,9 +1385,9 @@ Resources:
             Principal: '*'
             Resource: !Sub arn:aws:s3:::${ItemsS3Bucket}
             Resource: !Sub arn:aws:s3:::${ItemsS3Bucket}/*
-  
 
-#-------- Cognito Userpool ---------
+
+#-------- Cognito Userpool ----------
 
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
@@ -1398,6 +1401,8 @@ Resources:
           RequireSymbols: true
           RequireUppercase: true
       AutoVerifiedAttributes:
+        - email
+      AliasAttributes:
         - email
       Schema:
         - AttributeDataType: String
@@ -1449,7 +1454,8 @@ Resources:
         IdToken: days
         RefreshToken: days
 
-#------------ API REST -------------
+
+#------------- API REST -------------
   ZindeyAPIRest:
     Type: AWS::Serverless::Api
     Properties:
@@ -1773,7 +1779,31 @@ Resources:
                         - name
                       properties:
                         name:
-  #------------ API Configure -------------
+                          type: string
+        BusinessLineModel:
+          $schema:  http://json-schema.org/draft-04/schema#
+          title: ItemTypeModel
+          type: object
+          required:
+            - name
+          properties:
+            type:
+              name: string
+        ItemTypeModel:
+          $schema:  http://json-schema.org/draft-04/schema#
+          title: ItemTypeModel
+          type: object
+          required:
+            - type
+            - value
+          properties:
+            type:
+              type: string
+              enum: [ brand, category, ]
+            value:
+              type: string
+
+ #---------- API Configure -----------
   ApiAccountConfig:
     Type: "AWS::ApiGateway::Account"
     Properties:
@@ -1793,6 +1823,7 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - !Sub "arn:${AWS::Partition}:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+
 
 Outputs:
   ZindeyApi:
