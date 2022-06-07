@@ -1194,6 +1194,8 @@ Resources:
           RequireUppercase: true
       AutoVerifiedAttributes:
         - email
+      AliasAttributes:
+        - email
       Schema:
         - AttributeDataType: String
           Name: email
@@ -1429,7 +1431,7 @@ Resources:
             value:
               type: string
 
-#---------- API Configure -----------
+ #---------- API Configure -----------
   ApiAccountConfig:
     Type: "AWS::ApiGateway::Account"
     Properties:
