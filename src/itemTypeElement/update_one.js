@@ -1,6 +1,6 @@
 const { DynamoDB } = require("aws-sdk")
 
-const itemExist = require('../common/validation_exist')
+const itemExist = require('./validation_exist')
 
 const db = new DynamoDB.DocumentClient()
 const TableName = process.env.TABLE_NAME
@@ -19,9 +19,9 @@ exports.lambdaHandler = async ( event ) => {
   //Transform the JSON string of body value to a javascript object
   const req = JSON.parse(event.body)
   const paramsArr = Object.keys(req)
-  if(req?.name){
+  if(req?.type){
     try {
-      validationResponse = await itemExist( LAMBDA_NAME, req?.name )
+      validationResponse = await itemExist( LAMBDA_NAME, req?.type )
     } catch (error) {
       response.statusCode = 500
       response.body = JSON.stringify({
@@ -57,7 +57,7 @@ exports.lambdaHandler = async ( event ) => {
     response.statusCode = 403
     response.body = JSON.stringify({
       message: "Failed to update item type element.",
-      error: `Item type element "${req?.name}" already exists.`,
+      error: `Item type element "${req?.type}" already exists.`,
     })
   }
   return response

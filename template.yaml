@@ -546,10 +546,9 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTable
-            
-#--- Item Type Elements Functions ---
-  
-  GetItemTypesFunction:
+
+#--- Item Type Elements Functions ----
+  GetAllItemTypesFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: src/itemTypeElement/
@@ -563,7 +562,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /item/types
+            Path: /item/type
             Method: GET
             Auth:
                Authorizer: CognitoAuthorizer
@@ -584,7 +583,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /item/types/{type}
+            Path: /item/type/target
             Method: GET
             Auth:
                Authorizer: CognitoAuthorizer
@@ -605,7 +604,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /item/types/{id}
+            Path: /item/type/getOne/{id}
             Method: GET
             Auth:
                Authorizer: CognitoAuthorizer
@@ -621,12 +620,13 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref ItemTypeElementTableName
+          LAMBDA_NAME:  !Ref ItemTypeValidationFunction
       Events:
         CreateItemTypeEvent:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /item/types
+            Path: /item/type
             Method: POST
             Auth:
                Authorizer: CognitoAuthorizer
@@ -634,7 +634,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTypeElementTable
         - LambdaInvokePolicy:
-            FunctionName: !Ref ItemValidationFunction
+            FunctionName: !Ref ItemTypeValidationFunction
         - Statement:
           - Sid: LambdaInvokePolicy
             Effect: Allow
@@ -651,12 +651,13 @@ Resources:
       Environment:
         Variables:
           TABLE_NAME: !Ref ItemTypeElementTableName
+          LAMBDA_NAME:  !Ref ItemTypeValidationFunction
       Events:
         UpdateItemTypeEvent:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /item/types
+            Path: /item/type/{id}
             Method: PUT
             Auth:
                Authorizer: CognitoAuthorizer
@@ -664,7 +665,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTypeElementTable
         - LambdaInvokePolicy:
-            FunctionName: !Ref ItemValidationFunction
+            FunctionName: !Ref ItemTypeValidationFunction
         - Statement:
           - Sid: LambdaInvokePolicy
             Effect: Allow
@@ -686,7 +687,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /item/types
+            Path: /item/type/{id}
             Method: DELETE
             Auth:
                Authorizer: CognitoAuthorizer
@@ -696,7 +697,7 @@ Resources:
   ItemTypeValidationFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/item/
+      CodeUri: src/itemTypeElement/
       FunctionName: zindey-suite-item-type-validation
       Handler: item_type_validation.lambdaHandler
       Environment:
@@ -707,7 +708,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /item/types/validation
+            Path: /item/type/validation
             Method: POST
       Policies:
         - DynamoDBCrudPolicy:
@@ -728,7 +729,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /item/prices/{id}
+            Path: /item/price/{id}
             Method: GET
             Auth:
                Authorizer: CognitoAuthorizer
@@ -749,7 +750,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /item/prices
+            Path: /item/price
             Method: GET
             Auth:
                Authorizer: CognitoAuthorizer
@@ -770,10 +771,14 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /item/prices
+            Path: /item/price
             Method: POST
             Auth:
                Authorizer: CognitoAuthorizer
+            RequestModel:
+              Model: ItemPriceModelCreate
+              Required: true
+              ValidateBody: true
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemPriceTable
@@ -791,10 +796,14 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /item/prices/{id}
+            Path: /item/price/{id}
             Method: PUT
             Auth:
                Authorizer: CognitoAuthorizer
+            RequestModel:
+              Model: ItemPriceModelUpdate
+              Required: true
+              ValidateBody: true
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemPriceTable
@@ -812,7 +821,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref ZindeyAPIRest
-            Path: /item/prices/{id}
+            Path: /item/price/{id}
             Method: DELETE
             Auth:
                Authorizer: CognitoAuthorizer
@@ -1203,22 +1212,10 @@ Resources:
       AttributeDefinitions:
         - AttributeName: id
           AttributeType: S
-      KeySchema:
-        - AttributeName: id
-          KeyType: HASH
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
-
-  ItemTypeElementTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: !Ref ItemTypeElementTableName
-      AttributeDefinitions:
-        - AttributeName: type
+        - AttributeName: name
           AttributeType: S
       KeySchema:
-        - AttributeName: type
+        - AttributeName: id
           KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 5
@@ -1234,15 +1231,45 @@ Resources:
             ReadCapacityUnits: 5
             WriteCapacityUnits: 5
 
+  ItemTypeElementTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref ItemTypeElementTableName
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: type
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+        #- AttributeName: type
+        #  KeyType: RANGE
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      GlobalSecondaryIndexes:
+        - IndexName: GSIFindByType
+          KeySchema:
+            #- AttributeName: id
+            #  KeyType: HASH
+            - AttributeName: type
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput:
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
+
   ItemPriceTable:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: !Ref ItemPriceTableName
       AttributeDefinitions:
-        - AttributeName: type
+        - AttributeName: id
           AttributeType: S
       KeySchema:
-        - AttributeName: type
+        - AttributeName: id
           KeyType: HASH
       ProvisionedThroughput:
         ReadCapacityUnits: 5

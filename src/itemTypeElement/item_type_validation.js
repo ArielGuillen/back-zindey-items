@@ -11,18 +11,18 @@ exports.lambdaHandler = async ( event ) => {
     headers: { 'Content-Type': 'application/json;charset=UTF-8' },
     body: JSON.stringify({ message: "Validate item type element name." })
   }
-  //Get the item name from the body request
-  const name = event?.name
+  //Get the item type name from the body request
+  const type = event?.type
   //Create the object with the DynamoDB params
   const params = {
     TableName : TableName,
-    IndexName : "GSIFindByName",
-    KeyConditionExpression: '#name = :v_name',
+    IndexName : "GSIFindByType",
+    KeyConditionExpression: '#type = :v_type',
     ExpressionAttributeNames: {
-      '#name': 'name',
+      '#type': 'type',
     },
     ExpressionAttributeValues: {
-      ':v_name': name
+      ':v_type': type
     }
   }
   try {
@@ -37,7 +37,7 @@ exports.lambdaHandler = async ( event ) => {
       error: error.message
     })
   }
-  // Check if the result contain a value the name is repeat
+  // Check if the result contain a value the type name is repeat
   if( queryResponse?.Count === 0 )
     response.body = JSON.stringify({
       status: true,
@@ -47,7 +47,7 @@ exports.lambdaHandler = async ( event ) => {
     response.statusCode = 403
     response.body = JSON.stringify({
       status: false,
-      message: `Item type element "${name}" already exist.`,
+      message: `Item type element "${type}" already exist.`,
       id: queryResponse?.Items[0]?.id
     })
   }

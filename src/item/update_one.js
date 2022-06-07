@@ -1,6 +1,6 @@
 const { DynamoDB } = require("aws-sdk")
 
-const itemExist = require('../common/validation_exist')
+const itemExist = require('./validation_exist')
 
 const db = new DynamoDB.DocumentClient()
 const TableName = process.env.TABLE_NAME

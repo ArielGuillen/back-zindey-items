@@ -13,7 +13,7 @@ exports.lambdaHandler = async (event) => {
   }
   try{
     //Get the Type filter from the url params
-    const type = event.pathParameters.type
+    const type = event.queryStringParameters?.type
 
     //Create the object with the Dynamo params
     const params = {

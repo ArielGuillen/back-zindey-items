@@ -1,16 +1,16 @@
 const { Lambda } = require('aws-sdk')
 
-var lambda = new Lambda()
+const lambda = new Lambda()
 
-module.exports = async function( LAMBDA_NAME, name ) {
+module.exports = async function( LAMBDA_NAME, type ) {
   //Create the object to invoke the validation lambda
   let lambdaParams = {
     FunctionName: LAMBDA_NAME,
     InvocationType: 'RequestResponse',
     LogType: 'Tail',
-    Payload: JSON.stringify( { name } )
+    Payload: JSON.stringify( { type } )
   }
-  //Invoke lambda item_validation to check if the role name already exists
+  //Invoke lambda item_validation to check if the item type already exists
   const { Payload } = await lambda.invoke(lambdaParams).promise()
   const { body } = JSON.parse(Payload)
   const lambdaResult = JSON.parse(body)

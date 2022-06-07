@@ -1,13 +1,14 @@
 const uuid = require('uuid')
 const { DynamoDB } = require('aws-sdk')
 
-const itemTypeElement = require('../common/validation_exist')
+const itemTypeElement = require('./validation_exist')
 
 const db = new DynamoDB.DocumentClient()
 const TableName = process.env.TABLE_NAME
 const LAMBDA_NAME = process.env.LAMBDA_NAME
 
 exports.lambdaHandler = async( event ) => {
+  let validationResponse = {}
   //create the response object
   const response = {
     statusCode: 200,
@@ -18,7 +19,7 @@ exports.lambdaHandler = async( event ) => {
   //Transform the JSON string of body value to a javascript object
   const req = JSON.parse(event.body)
   try {
-    validationResponse = await itemTypeElement( LAMBDA_NAME, req?.name )
+    validationResponse = await itemTypeElement( LAMBDA_NAME, req?.type )
   } catch (error) {
     console.log(error)
     response.statusCode = 500;
@@ -27,6 +28,7 @@ exports.lambdaHandler = async( event ) => {
       error: error.message
     })
   }
+  // validationResponse.status = true
   if( validationResponse?.status ){
     const id = uuid.v4()
     const newItem = {
@@ -55,7 +57,8 @@ exports.lambdaHandler = async( event ) => {
     response.statusCode = 403;
     response.body = JSON.stringify({
       message: "Failed to create item type element.",
-      error: `Item type element "${req?.name}" already exists.`
+      error: `Item type element "${req?.type}" already exists.`,
+      validationResponse
     })
   }
   return response
