@@ -1520,19 +1520,18 @@ Resources:
               maxLength: 10
               pattern: ^[-A-Z0-9./$+# ]+
             price:
-              type: number
-              minimum: 0
-              exclusiveMinimum: true
+              type: string
+              pattern: ^[-a-z0-9]+
             department:
               type: string
               minLength: 4
               maxLength: 32
-              pattern: ^[-A-Z0-9./$+# ]+
+              pattern: ^[-a-z0-9]+
             category:
               type: string
               minLength: 4
               maxLength: 32
-              pattern: ^[-A-Z0-9./$+# ]+
+              pattern: ^[-a-z0-9]+
             tradeMark:
               type: string
               minLength: 4
@@ -1560,19 +1559,18 @@ Resources:
               maxLength: 10
               pattern: ^[-A-Z0-9./$+# ]+
             price:
-              type: number
-              minimum: 0
-              exclusiveMinimum: true
+              type: string
+              pattern: ^[-a-z0-9]+
             department:
               type: string
               minLength: 4
               maxLength: 32
-              pattern: ^[-A-Z0-9./$+# ]+
+              pattern: ^[-a-z0-9]+
             category:
               type: string
               minLength: 4
               maxLength: 32
-              pattern: ^[-A-Z0-9./$+# ]+
+              pattern: ^[-a-z0-9]+
             tradeMark:
               type: string
               minLength: 4
@@ -1595,7 +1593,7 @@ Resources:
               pattern: ^[-A-Z0-9./$+# ]+
             businessId:
               type: string
-              pattern: ^[-A-Z0-9./$+# ]+
+              pattern: ^[-a-z0-9]+
           required:
             - type
             - value
@@ -1615,7 +1613,7 @@ Resources:
               pattern: ^[-A-Z0-9./$+# ]+
             businessId:
               type: string
-              pattern: ^[-A-Z0-9./$+# ]+
+              pattern: ^[-a-z0-9]+
         ItemPriceModelCreate:
           $schema: 'http://json-schema.org/draft-04/schema#'
           title: ItemPriceModelCreate
@@ -1638,7 +1636,7 @@ Resources:
               pattern: ^[-A-Z0-9./$+# ]+
             warehouseSheetId:
               type: string
-              pattern: ^[-A-Z0-9./$+# ]+
+              pattern: ^[-a-z0-9]+
             isWholesale:
               type: boolean
             isPublished:
@@ -1647,7 +1645,7 @@ Resources:
               type: boolean
             itemId:
               type: string
-              pattern: ^[-A-Z0-9./$+# ]+
+              pattern: ^[-a-z0-9]+
           required:
             - price
             - isFixed
@@ -1678,7 +1676,7 @@ Resources:
               pattern: ^[-A-Z0-9./$+# ]+
             warehouseSheetId:
               type: string
-              pattern: ^[-A-Z0-9./$+# ]+
+              pattern: ^[-a-z0-9]+
             isWholesale:
               type: boolean
             isPublished:
@@ -1687,7 +1685,7 @@ Resources:
               type: boolean
             itemId:
               type: string
-              pattern: ^[-A-Z0-9./$+# ]+
+              pattern: ^[-a-z0-9]+
 
         RoleModel:
           $schema: 'http://json-schema.org/draft-04/schema#'
@@ -1816,6 +1814,7 @@ Resources:
           properties:
             type:
               name: string
+        # Original ItemTypeModel; save for future use and replacement
         ItemTypeModel:
           $schema:  http://json-schema.org/draft-04/schema#
           title: ItemTypeModel
