@@ -8,6 +8,6 @@ s3_prefix = "zindey-suite-051222"
 region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "AccountTableName=\"zindey-suite-account-table\" BranchTableName=\"zindey-suite-brach-table\" BusinessTableName=\"zindey-suite-business-table\" BusinessLineTableName=\"zindey-suite-business-line-table\" ItemTableName=\"zindey-suite-item-table\" PaymentTableName=\"zindey-suite-payment-table\" PolicyTableName=\"zindey-suite-policy-table\" RoleTableName=\"zindey-suite-role-table\" WarehouseTableName=\"zindey-suite-warehouse-table\" ImagesS3BucketName=\"zindey-suite-business-bucket-052322\" ItemsS3BucketName=\"zindey-suite-items-bucket-052322\" UserPoolName=\"zindey-suite-users\""
+parameter_overrides = "AccountTableName=\"zindey-suite-account-table\" BranchTableName=\"zindey-suite-brach-table\" BusinessTableName=\"zindey-suite-business-table\" BusinessLineTableName=\"zindey-suite-business-line-table\" ItemTableName=\"zindey-suite-item-table\" ItemTypeElementTableName=\"zindey-suite-item-type-element-table\" PaymentTableName=\"zindey-suite-payment-table\" PolicyTableName=\"zindey-suite-policy-table\" RoleTableName=\"zindey-suite-role-table\" WarehouseTableName=\"zindey-suite-warehouse-table\" ImagesS3BucketName=\"zindey-suite-business-bucket-060622\" ItemsS3BucketName=\"zindey-suite-items-bucket-060622\" UserPoolName=\"zindey-suite-users\" CognitoDomain=\"zindey-suite-dev\""
 image_repositories = []
 disable_rollback = true

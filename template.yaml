@@ -37,10 +37,10 @@ Parameters:
     Default: zindey-suite-warehouse-table
   ImagesS3BucketName: 
     Type: String
-    Default: zindey-suite-business-bucket-052322
+    Default: zindey-suite-business-bucket-060622
   ItemsS3BucketName:
     Type: String
-    Default: zindey-suite-items-bucket-052322
+    Default: zindey-suite-items-bucket-060622
   UserPoolName: 
     Type: String
     Default: zindey-suite-users
@@ -524,7 +524,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref ItemTableName
         - S3ReadPolicy:
-            BucketName: zindey-suite-items-bucket-052322
+            BucketName: zindey-suite-items-bucket-060622
 
   ItemValidationFunction:
     Type: AWS::Serverless::Function
@@ -1153,7 +1153,7 @@ Resources:
   ItemsS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: zindey-suite-items-bucket-052322
+      BucketName: zindey-suite-items-bucket-060622
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: false
